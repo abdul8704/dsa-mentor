@@ -234,6 +234,140 @@ body {
   gap: 0.7rem;
 }
 
+.onboarding-wrap {
+  width: min(100%, 920px);
+  margin: 0 auto;
+}
+
+.onboarding-shell {
+  display: block;
+  height: 100dvh;
+  overflow-x: clip;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 1rem;
+  padding-bottom: 1.5rem;
+}
+
+.onboarding-stage {
+  perspective: none;
+}
+
+.onboarding-card {
+  position: relative;
+  inset: auto;
+  min-height: auto;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.onboarding-header {
+  margin-bottom: 1rem;
+}
+
+.onboarding-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.onboarding-card-top > div:first-child {
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.onboarding-card-top .auth-face-title {
+  line-height: 1.15;
+}
+
+.onboarding-card-top .auth-face-copy {
+  margin-bottom: 0;
+}
+
+.onboarding-session-pill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.42rem 0.8rem;
+  border: 1px solid rgba(167, 108, 75, 0.2);
+  background: rgba(255, 244, 231, 0.72);
+  color: #734930;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.onboarding-form {
+  margin-top: 0.15rem;
+}
+
+.onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.onboarding-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.onboarding-cta {
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.onboarding-cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.88;
+  transform: none;
+}
+
+.onboarding-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 244, 233, 0.7);
+  border-top-color: rgba(255, 244, 233, 0.15);
+  animation: spin 650ms linear infinite;
+}
+
+.onboarding-footer {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.onboarding-status {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.onboarding-preview {
+  border-radius: 16px;
+  border: 1px solid rgba(197, 151, 119, 0.28);
+  background: rgba(255, 250, 244, 0.72);
+  padding: 0.95rem 1rem;
+}
+
+.onboarding-preview-label {
+  margin-bottom: 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.onboarding-preview pre {
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: inherit;
+  font-size: 0.8rem;
+}
+
 .auth-label {
   font-size: 0.79rem;
   color: #6f5f4e;
@@ -321,6 +455,15 @@ body {
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 640px) {
   .auth-shell {
     padding: 1.1rem 0.75rem;
@@ -333,6 +476,25 @@ body {
 
   .auth-card-face {
     padding: 1.05rem;
+  }
+
+  .onboarding-card-top {
+    flex-direction: column;
+  }
+
+  .onboarding-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-shell {
+    height: auto;
+    min-height: 100dvh;
+    padding-top: 0.75rem;
+    padding-bottom: 1rem;
+  }
+
+  .onboarding-card {
+    min-height: auto;
   }
 }
 
@@ -389,5 +551,70 @@ body {
     border-color: rgba(255, 176, 132, 0.2);
     color: #f2decd;
   }
+
+  .onboarding-session-pill {
+    background: rgba(45, 33, 24, 0.92);
+    border-color: rgba(255, 176, 132, 0.18);
+    color: #f0d7c2;
+  }
+
+  .onboarding-preview {
+    background: rgba(33, 24, 18, 0.88);
+    border-color: rgba(255, 176, 132, 0.16);
+  }
+}
+
+/* ─── Dashboard Styles ────────────────────────────────────────────────────── */
+
+.dashboard-shell {
+  background-color: #09090b;
+  color: #e5e1e4;
+  min-height: 100vh;
+  scrollbar-width: thin;
+  scrollbar-color: #f47144 #131315;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.glass-card {
+  background: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.glass-card:hover {
+  box-shadow: 0 8px 32px rgba(244, 113, 68, 0.08);
+}
+
+@keyframes dashboard-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-shell main > div {
+  animation: dashboard-fade-in 500ms ease-out;
 }
 

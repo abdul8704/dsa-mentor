@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from "@/app/lib/supabase/server-client"
 const PROTECTED_ROUTES = ["/dashboard"];
 const AUTH_ROUTES = ["/auth"]
 
-export async function middleware(req: NextRequest){
+export async function proxy(req: NextRequest){
     const supabase = await createSupabaseServerClient();
 
     const { data: { session } } = await supabase.auth.getSession();

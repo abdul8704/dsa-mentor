@@ -56,6 +56,7 @@ export default function AuthPage({ user }: EmailPassword) {
                     setPassword("");
                     setConfirmPass("");
                     setName("");
+                    router.push("/onboarding")
                 }
                 console.log(data);
             }

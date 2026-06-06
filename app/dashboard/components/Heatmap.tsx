@@ -8,10 +8,10 @@ interface HeatmapProps {
 }
 
 const INTENSITY_COLORS = [
-  "bg-white/5",
-  "bg-[rgba(244,113,68,0.15)]",
-  "bg-[rgba(244,113,68,0.35)]",
-  "bg-[rgba(244,113,68,0.6)]",
+  "bg-white/[0.04]",
+  "bg-[rgba(244,113,68,0.3)]",
+  "bg-[rgba(244,113,68,0.5)]",
+  "bg-[rgba(244,113,68,0.72)]",
   "bg-[#f47144]",
 ];
 

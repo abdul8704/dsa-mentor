@@ -27,14 +27,17 @@ export async function createSupabaseServerClient() {
                 return cookieStore.getAll();
             },
             // lets supabase update the cookies
+            // NOTE: setAll is expected to throw in Server Components where
+            // cookies are read-only. We silently ignore the error here —
+            // it only succeeds in Server Actions and Route Handlers.
             setAll(cookieToSet) {
                 try{
                     cookieToSet.forEach(({ name, value, options }) => {
                         cookieStore.set(name, value, options);
                     })
                 }
-                catch(err){
-                    console.error("Error setting cookies in Supabase server client:", err);
+                catch{
+                    // Expected in Server Components — cookies are read-only there
                 }
             }
         }

@@ -16,6 +16,7 @@ const DEFAULT_DATA: DifficultyStats = {
 
 export default function DifficultyBreakdown({ data }: DifficultyBreakdownProps) {
   const d = data ?? DEFAULT_DATA;
+  console.log(data)
   const [animated, setAnimated] = useState(false);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function DifficultyBreakdown({ data }: DifficultyBreakdownProps) 
   return (
     <div className="glass-card rounded-xl p-5 lg:p-6">
       <h4 className="text-[12px] tracking-[0.05em] font-medium uppercase text-[#dfc0b6] mb-6" style={{ fontFamily: "var(--font-geist-mono)" }}>
-        Difficulty Breakdown
+         Breakdown
       </h4>
       <div className="flex items-center gap-6">
         {/* Donut Chart */}

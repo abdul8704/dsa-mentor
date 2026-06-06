@@ -16,7 +16,7 @@ export interface StreakData {
   last7DaysSolved: number;
   /** Percentage change vs previous 7 days (positive = up, negative = down) */
   last7DaysChange: number;
-  /** Per-day solved count for last 7 days (Mon→Sun) */
+  /** Per-day solved count for last 7 days (index 0 = 7 days ago, index 6 = today) */
   last7DaysBreakdown: number[];
   solvedThisMonth: number;
   solvedPrev30Days: number;
@@ -37,6 +37,15 @@ export interface DifficultyStats {
   total: number;
 }
 
+/**
+ * Per-platform difficulty breakdown.
+ * Keys are lowercase platform names (e.g. "leetcode", "codeforces") plus
+ * "all" for the combined totals across every platform.
+ */
+export interface PlatformDifficultyMap {
+  [platform: string]: DifficultyStats;
+}
+
 export interface PlatformStat {
   platform: string;
   icon: string; // Material Symbols icon name
@@ -51,6 +60,7 @@ export interface ContestRatingPoint {
   date: string;
   rating: number;
   contestId: string;
+  platform?: string;
 }
 
 export interface ContestRatingData {
@@ -60,6 +70,7 @@ export interface ContestRatingData {
   totalContests: number;
   percentile: string;
   history: ContestRatingPoint[];
+  platformHistories: Record<string, ContestRatingPoint[]>;
 }
 
 export interface TopicStat {
@@ -81,7 +92,7 @@ export interface DashboardData {
   profile: UserProfile;
   streak: StreakData;
   heatmap: HeatmapDay[];
-  difficulty: DifficultyStats;
+  difficulty: PlatformDifficultyMap;
   platforms: PlatformStat[];
   contestRating: ContestRatingData;
   topics: TopicBreakdownData;

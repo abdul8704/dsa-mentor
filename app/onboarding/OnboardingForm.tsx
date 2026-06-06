@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { getBrowserClient } from "@/app/lib/supabase/browser-client";
 import { addPlatformHandles } from "../actions/profile.actions";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 const headingFont = Bricolage_Grotesque({
     subsets: ["latin"],
@@ -132,6 +133,7 @@ export default function OnboardingForm({platforms}: { platforms: { platform: str
 
         try {
             await addPlatformHandles(userId, nextPayload);
+            await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/refresh/fresh-init`, { userId });
             setStatus("Platform handles saved successfully! Redirecting to dashboard...");
             router.push("/dashboard");
         } catch {

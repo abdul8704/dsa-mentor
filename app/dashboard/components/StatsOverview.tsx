@@ -1,25 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { DifficultyStats, PlatformStat } from "@/app/lib/types/analytics";
+import { useEffect, useMemo, useState } from "react";
+import type { DifficultyStats, PlatformDifficultyMap, PlatformStat } from "@/app/lib/types/analytics";
 
 interface StatsOverviewProps {
-  difficulty?: DifficultyStats | null;
+  /** Per-platform difficulty map; key "all" = combined totals */
+  difficulty?: PlatformDifficultyMap | null;
   platforms?: PlatformStat[] | null;
 }
 
-const DEFAULT_DIFFICULTY: DifficultyStats = {
-  easy: 342,
-  medium: 412,
-  hard: 88,
-  total: 842,
+const DEFAULT_DIFFICULTY: PlatformDifficultyMap = {
+  all: { easy: 0, medium: 0, hard: 0, total: 0 },
 };
-
-const DEFAULT_PLATFORMS: PlatformStat[] = [
-  { platform: "LeetCode", icon: "code", solvedCount: 20, rating: 2100, maxRating: 2200, subtitle: "Global Rank: #4k", color: "primary" },
-  { platform: "AtCoder", icon: "terminal", solvedCount: 34, rating: 1820, maxRating: 1900, subtitle: "1820 Rated", color: "tertiary" },
-  { platform: "Codeforces", icon: "public", solvedCount: 56, rating: 1650, maxRating: 1700, subtitle: "Expert Level", color: "secondary" },
-];
 
 const PLATFORM_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   primary: { bg: "rgba(244,113,68,0.08)", border: "rgba(244,113,68,0.2)", text: "#ffb59d" },
@@ -27,69 +19,140 @@ const PLATFORM_COLORS: Record<string, { bg: string; border: string; text: string
   secondary: { bg: "rgba(200,198,201,0.08)", border: "rgba(200,198,201,0.2)", text: "#c8c6c9" },
 };
 
+/** Active (selected) platform pill styles */
+const PLATFORM_ACTIVE_COLORS: Record<string, { bg: string; border: string }> = {
+  primary: { bg: "rgba(244,113,68,0.22)", border: "rgba(244,113,68,0.55)" },
+  tertiary: { bg: "rgba(78,222,163,0.22)", border: "rgba(78,222,163,0.55)" },
+  secondary: { bg: "rgba(200,198,201,0.22)", border: "rgba(200,198,201,0.55)" },
+};
+
+/** Map platform names → color keys for UI styling */
+const PLATFORM_COLOR_MAP: Record<string, "primary" | "tertiary" | "secondary"> = {
+  leetcode: "primary",
+  atcoder: "tertiary",
+  codeforces: "secondary",
+};
+
 const DIFFICULTY_ITEMS = [
   { key: "easy" as const, label: "Easy", color: "#6ffbbe", dotClass: "bg-[#6ffbbe]" },
   { key: "medium" as const, label: "Medium", color: "#ffb700", dotClass: "bg-[#ffb700]" },
   { key: "hard" as const, label: "Hard", color: "#f63737", dotClass: "bg-[#f63737]" },
 ];
-// "#f47144", "#4edea3", "#6ffbbe", "#93000a"
+
+/**
+ * Represents a single pill in the bottom platform row.
+ * Can be derived from either the PlatformStat[] prop or the
+ * PlatformDifficultyMap keys (fallback).
+ */
+interface PlatformPill {
+  name: string;
+  solvedCount: number;
+  colorKey: "primary" | "tertiary" | "secondary";
+}
+
 export default function StatsOverview({ difficulty, platforms }: StatsOverviewProps) {
-  const d = difficulty ?? DEFAULT_DIFFICULTY;
-  const plats = platforms ?? DEFAULT_PLATFORMS;
-  const [animated, setAnimated] = useState(false);
+  const diffMap: PlatformDifficultyMap = difficulty ?? DEFAULT_DIFFICULTY;
+console.log(difficulty, platforms)
+  /**
+   * Build platform pills from either:
+   * 1. The `platforms` prop (if provided and non-empty) — uses real rating data
+   * 2. The `difficulty` map keys (fallback) — derives from solved problems data
+   */
+  const pills: PlatformPill[] = useMemo(() => {
+    if (platforms && platforms.length > 0) {
+      return platforms.map((p): PlatformPill => ({
+        name: p.platform,
+        solvedCount: p.solvedCount,
+        colorKey: p.color,
+      }));
+    }
+
+    const platformKeys: string[] = Object.keys(diffMap).filter((k) => k !== "all");
+    if (platformKeys.length > 0) {
+      return platformKeys.map((key): PlatformPill => ({
+        name: key,
+        solvedCount: diffMap[key]?.total ?? 0,
+        colorKey: PLATFORM_COLOR_MAP[key] ?? "primary",
+      }));
+    }
+
+    return [];
+  }, [platforms, diffMap]);
+
+  /** null = "all platforms combined", string = specific platform key */
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+  const [animated, setAnimated] = useState<boolean>(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimated(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
-  const total = d.total || 1;
-  const easyPct = (d.easy / total) * 100;
-  const mediumPct = (d.medium / total) * 100;
-  const hardPct = (d.hard / total) * 100;
+  // Reset animation on platform change so the donut re-draws
+  useEffect(() => {
+    setAnimated(false);
+    const timer = setTimeout(() => setAnimated(true), 50);
+    return () => clearTimeout(timer);
+  }, [selectedPlatform]);
+
+  // Resolve the active difficulty stats from the map
+  const d: DifficultyStats = selectedPlatform === null
+    ? (diffMap["all"] ?? { easy: 0, medium: 0, hard: 0, total: 0 })
+    : (diffMap[selectedPlatform] ?? { easy: 0, medium: 0, hard: 0, total: 0 });
+
+  const total: number = d.total || 1;
+  const easyPct: number = (d.easy / total) * 100;
+  const mediumPct: number = (d.medium / total) * 100;
+  const hardPct: number = (d.hard / total) * 100;
+
+  /** Hover on a platform pill to filter difficulty. Hover away to reset. */
+  function handlePlatformHover(platformName: string): void {
+    setSelectedPlatform(platformName.toLowerCase());
+  }
+
+  function handlePlatformHoverEnd(): void {
+    setSelectedPlatform(null);
+  }
 
   return (
     <div className="glass-card rounded-xl p-5 lg:p-6 flex flex-col lg:flex-row gap-0 h-full">
       {/* ── Left 1/3: Donut Chart ── */}
       <div className="lg:w-1/3 flex flex-col items-center justify-center py-4 lg:py-0 lg:border-r lg:border-white/5 lg:pr-5">
-        <h4
-          className="text-xs tracking-[0.12em] font-medium uppercase text-[#a78b82] mb-4 self-start lg:self-center"
-          style={{ fontFamily: "var(--font-geist-mono)" }}
-        >
-          Difficulty
-        </h4>
+        <div className="flex items-center gap-2 mb-4 self-start lg:self-center">
+          <h4
+            className="text-xs tracking-[0.12em] font-medium uppercase text-[#a78b82]"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
+          >
+            Difficulty
+          </h4>
+          {selectedPlatform && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-[#dfc0b6] capitalize">
+              {selectedPlatform}
+            </span>
+          )}
+        </div>
         <div className="relative w-45 h-45 lg:w-45 lg:h-45 flex items-center justify-center flex-shrink-0">
           <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100">
-            {/* Background track ring */}
             <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="13" />
             {(() => {
-              const circ = 2 * Math.PI * 35;
-              const easyLen = (easyPct / 100) * circ;
-              const medLen = (mediumPct / 100) * circ;
-              const hardLen = (hardPct / 100) * circ;
+              const circ: number = 2 * Math.PI * 35;
+              const easyLen: number = (easyPct / 100) * circ;
+              const medLen: number = (mediumPct / 100) * circ;
+              const hardLen: number = (hardPct / 100) * circ;
               return (
                 <>
-                  <circle
-                    cx="50" cy="50" r="35" fill="none"
+                  <circle cx="50" cy="50" r="35" fill="none"
                     stroke="#6ffbbe" strokeWidth="12" strokeLinecap="butt"
                     strokeDasharray={animated ? `${easyLen} ${circ - easyLen}` : `0 ${circ}`}
-                    strokeDashoffset="0"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                  <circle
-                    cx="50" cy="50" r="35" fill="none"
+                    strokeDashoffset="0" className="transition-all duration-1000 ease-out" />
+                  <circle cx="50" cy="50" r="35" fill="none"
                     stroke="#ffb700" strokeWidth="12" strokeLinecap="butt"
                     strokeDasharray={animated ? `${medLen} ${circ - medLen}` : `0 ${circ}`}
-                    strokeDashoffset={-easyLen}
-                    className="transition-all duration-1000 ease-out delay-200"
-                  />
-                  <circle
-                    cx="50" cy="50" r="35" fill="none"
+                    strokeDashoffset={-easyLen} className="transition-all duration-1000 ease-out delay-200" />
+                  <circle cx="50" cy="50" r="35" fill="none"
                     stroke="#f63737" strokeWidth="12" strokeLinecap="butt"
                     strokeDasharray={animated ? `${hardLen} ${circ - hardLen}` : `0 ${circ}`}
-                    strokeDashoffset={-(easyLen + medLen)}
-                    className="transition-all duration-1000 ease-out delay-300"
-                  />
+                    strokeDashoffset={-(easyLen + medLen)} className="transition-all duration-1000 ease-out delay-300" />
                 </>
               );
             })()}
@@ -110,17 +173,11 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
               <div key={item.key} className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className={`w-2 h-2 rounded-full ${item.dotClass}`} />
-                  <span
-                    className="text-[13px] text-[#dfc0b6]"
-                    style={{ fontFamily: "var(--font-geist-mono)" }}
-                  >
+                  <span className="text-[13px] text-[#dfc0b6]" style={{ fontFamily: "var(--font-geist-mono)" }}>
                     {item.label}
                   </span>
                 </div>
-                <span
-                  className="text-[14px] font-semibold text-[#e5e1e4]"
-                  style={{ fontFamily: "var(--font-geist-mono)" }}
-                >
+                <span className="text-[14px] font-semibold text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-mono)" }}>
                   {d[item.key]}
                 </span>
               </div>
@@ -128,48 +185,48 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="h-px bg-white/5 my-3" />
+        {/* Divider — only show when there are platform pills */}
+        {pills.length > 0 && <div className="h-px bg-white/5 my-3" />}
 
-        {/* Bottom half: Platform pills */}
-        <div className="flex-1 flex flex-col justify-center py-2 lg:py-0">
-          <div className="flex gap-2">
-            {plats.map((p) => {
-              const colors = PLATFORM_COLORS[p.color] ?? PLATFORM_COLORS.primary;
-              return (
-                <div
-                  key={p.platform}
-                  className="flex-1 flex flex-col items-center justify-center rounded-lg py-3 px-2 cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg"
-                  style={{
-                    background: colors.bg,
-                    border: `1px solid ${colors.border}`,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = colors.bg.replace("0.08", "0.18");
-                    e.currentTarget.style.borderColor = colors.border.replace("0.2", "0.45");
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = colors.bg;
-                    e.currentTarget.style.borderColor = colors.border;
-                  }}
-                >
-                  <span
-                    className="text-[11px] font-medium tracking-wide"
-                    style={{ color: colors.text, fontFamily: "var(--font-geist-mono)" }}
+        {/* Bottom half: Platform pills (hover to filter difficulty) */}
+        {pills.length > 0 && (
+          <div className="flex-1 flex flex-col justify-center py-2 lg:py-0">
+            <div className="flex gap-2">
+              {pills.map((p) => {
+                const platformKey: string = p.name.toLowerCase();
+                const isActive: boolean = selectedPlatform === platformKey;
+                const colors = PLATFORM_COLORS[p.colorKey] ?? PLATFORM_COLORS.primary;
+                const activeColors = PLATFORM_ACTIVE_COLORS[p.colorKey] ?? PLATFORM_ACTIVE_COLORS.primary;
+
+                return (
+                  <div
+                    key={p.name}
+                    className={`flex-1 flex flex-col items-center justify-center rounded-lg py-3 px-2 cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg ${isActive ? "ring-1 ring-white/20" : ""}`}
+                    style={{
+                      background: isActive ? activeColors.bg : colors.bg,
+                      border: `1px solid ${isActive ? activeColors.border : colors.border}`,
+                    }}
+                    onMouseEnter={() => handlePlatformHover(p.name)}
+                    onMouseLeave={handlePlatformHoverEnd}
                   >
-                    {p.platform}
-                  </span>
-                  <span
-                    className="text-[20px] font-bold mt-1 text-[#e5e1e4]"
-                    style={{ fontFamily: "var(--font-geist-sans)" }}
-                  >
-                    {p.solvedCount}
-                  </span>
-                </div>
-              );
-            })}
+                    <span
+                      className="text-[11px] font-medium tracking-wide capitalize"
+                      style={{ color: colors.text, fontFamily: "var(--font-geist-mono)" }}
+                    >
+                      {p.name}
+                    </span>
+                    <span
+                      className="text-[20px] font-bold mt-1 text-[#e5e1e4]"
+                      style={{ fontFamily: "var(--font-geist-sans)" }}
+                    >
+                      {p.solvedCount}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

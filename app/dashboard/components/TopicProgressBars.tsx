@@ -100,7 +100,7 @@ export default function TopicProgressBars({ data }: TopicProgressBarsProps) {
 
                 {/* Trend diff adjacent to bar */}
                 <span
-                  className={`text-xs font-semibold w-10 text-right flex-shrink-0 ${
+                  className={`text-xs font-semibold w-12 text-right flex-shrink-0 ${
                     trendUp ? "text-[#4edea3]" : "text-[#ffb4ab]"
                   }`}
                   style={{ fontFamily: "var(--font-geist-mono)" }}

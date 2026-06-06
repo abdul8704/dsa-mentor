@@ -1,13 +1,21 @@
+import { Suspense } from "react";
 import AuthPage from "./AuthPage";
 import { createSupabaseServerClient } from "../lib/supabase/server-client";
+import { redirect } from "next/navigation";
 
 export default async function Page() {
     const supabase = await createSupabaseServerClient();
 
-    const res = await supabase.auth.getSession(); //get current session from supabase, if user is logged in it will return session object otherwise null
+    const { data: { user } } = await supabase.auth.getUser();
 
-    console.log("Session data in page.tsx:", res.data); //log session data to verify if we are getting the correct session information
+    // If already logged in, redirect to dashboard
+    if (user) {
+        redirect("/dashboard");
+    }
+
     return (
-        <AuthPage user={null} error={null} />
+        <Suspense>
+            <AuthPage user={null} error={null} />
+        </Suspense>
     )
 }

@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "../lib/supabase/server-client";
 import { redirect } from "next/navigation";
 import { getDashboardData } from "../actions/analytics.actions";
+import type { DashboardData } from "../lib/types/analytics";
 
 import ProfileCard from "./components/ProfileCard";
 import StreakStatsCard from "./components/StreakStatsCard";
@@ -21,8 +22,8 @@ export default async function DashboardPage() {
     redirect("/auth");
   }
 
-  // Fetch all dashboard data in parallel
-  const data = await getDashboardData(user.id);
+  // Fetch all dashboard data in a single parallel call
+  const data: DashboardData = await getDashboardData(user.id);
 
   return (
     <div className="space-y-6">

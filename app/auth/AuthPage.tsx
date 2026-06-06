@@ -66,6 +66,7 @@ export default function AuthPage({ user }: EmailPassword) {
     const [status, setStatus] = useState("");
     const [statusType, setStatusType] = useState<"error" | "success" | "info">("info");
     const [isLoading, setIsLoading] = useState(false);
+    const [showVerificationModal, setShowVerificationModal] = useState(false);
 
     const supabase = getBrowserClient()
 
@@ -79,6 +80,20 @@ export default function AuthPage({ user }: EmailPassword) {
             window.history.replaceState({}, "", "/auth");
         }
     }, [searchParams]);
+
+    useEffect(() => {
+        if (!showVerificationModal) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            setShowVerificationModal(false);
+            setIsRegisterMode(false);
+            router.push("/auth");
+        }, 5000);
+
+        return () => window.clearTimeout(timer);
+    }, [showVerificationModal, router]);
 
     function clearStatus() {
         setStatus("");
@@ -118,13 +133,13 @@ export default function AuthPage({ user }: EmailPassword) {
                         setStatus("An account with this email already exists. Try logging in instead.");
                         setStatusType("error");
                     } else {
-                        setStatus("Account created! Check your email to verify.")
-                        setStatusType("success");
+                        await supabase.auth.signOut();
                         setEmail("");
                         setPassword("");
                         setConfirmPass("");
                         setName("");
-                        router.push("/onboarding")
+                        clearStatus();
+                        setShowVerificationModal(true);
                     }
                 }
             }
@@ -146,9 +161,9 @@ export default function AuthPage({ user }: EmailPassword) {
                     setStatus(friendlyError(error.message));
                     setStatusType("error");
                 } else {
-                    setStatus("Logged in successfully!")
+                    setStatus("Logged in successfully!");
                     setStatusType("success");
-                    router.push("/dashboard")
+                    router.push("/dashboard");
                 }
             }
             catch(err) {
@@ -195,11 +210,27 @@ export default function AuthPage({ user }: EmailPassword) {
         </div>
     ) : null;
 
+    const verificationModal = showVerificationModal ? (
+        <div className="auth-modal-overlay" role="presentation">
+            <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="verification-modal-title">
+                <div className="auth-modal-icon" aria-hidden>✓</div>
+                <h2 id="verification-modal-title" className={`${headingFont.className} auth-modal-title`}>
+                    Check your email
+                </h2>
+                <p className="auth-modal-copy">
+                    A verification email has been sent to your mail. Click the link in that email to verify your account.
+                </p>
+                <p className="auth-modal-hint">Redirecting to login in 5 seconds…</p>
+            </div>
+        </div>
+    ) : null;
+
     return (
         <main
             className={`auth-shell ${bodyFont.className}`}
             data-mode={isRegisterMode ? "register" : "login"}
         >
+            {verificationModal}
             <div className="auth-grid" />
             <div className="auth-spot auth-spot-left" />
             <div className="auth-spot auth-spot-right" />

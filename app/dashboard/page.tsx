@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "../lib/supabase/server-client";
+import { isOnboardingCompleted } from "../lib/auth/onboarding";
 import { redirect } from "next/navigation";
 import { getDashboardData } from "../actions/analytics.actions";
 import type { DashboardData } from "../lib/types/analytics";
@@ -20,6 +21,10 @@ export default async function DashboardPage() {
 
   if (!user) {
     redirect("/auth");
+  }
+
+  if (!(await isOnboardingCompleted(user.id))) {
+    redirect("/onboarding");
   }
 
   // Fetch all dashboard data in a single parallel call

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../lib/supabase/server-client";
+import { ensureProfile, isOnboardingCompleted } from "../lib/auth/onboarding";
 import OnboardingForm from "./OnboardingForm";
 
 export default async function Page() {
@@ -13,29 +14,31 @@ export default async function Page() {
         redirect("/auth");
     }
 
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, onboarding_completed")
-        .eq("id", user.id)
-        .maybeSingle();
+    await ensureProfile(user.id);
 
-    if (!profile) {
-        await supabase.from("profiles").insert({
-            id: user.id,
-            onboarding_completed: false,
-        });
-    }
-
-    if (profile?.onboarding_completed) {
+    if (await isOnboardingCompleted(user.id)) {
         redirect("/dashboard");
     }
 
-    const { data: platforms } = await supabase.
-                                        from("user_platforms")
-                                        .select("platform, handle")
-                                        .eq("user_id", user.id);
+    const [{ data: platforms }, { data: profile }] = await Promise.all([
+        supabase
+            .from("user_platforms")
+            .select("platform, handle")
+            .eq("user_id", user.id),
+        supabase
+            .from("profile")
+            .select("name, description")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+    ]);
 
     return (
-        <OnboardingForm platforms={platforms} />
+        <OnboardingForm
+            platforms={platforms}
+            profile={{
+                name: profile?.name ?? user.user_metadata?.name ?? "",
+                description: profile?.description ?? "",
+            }}
+        />
     );
 }

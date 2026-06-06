@@ -37,5 +37,21 @@ export async function GET(req: NextRequest){
         );
     }
     
-    return NextResponse.redirect(`${origin}/dashboard`);
+    const supabase = await createSupabaseServerClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        return NextResponse.redirect(`${origin}/auth`);
+    }
+
+    const { data: profile } = await supabase
+        .from("profile")
+        .select("onboarding_completed")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+    const destination = profile?.onboarding_completed ? "/dashboard" : "/onboarding";
+    return NextResponse.redirect(`${origin}${destination}`);
 }

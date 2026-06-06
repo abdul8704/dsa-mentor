@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { getBrowserClient } from "@/app/lib/supabase/browser-client";
 
 const NAV_ITEMS = [
   { label: "Dashboard", icon: "dashboard", href: "/dashboard" },
@@ -20,12 +22,38 @@ const FOOTER_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = getBrowserClient();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(href);
   };
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+
+      setShowLogoutConfirm(false);
+      setMobileOpen(false);
+      router.push("/auth");
+    } catch {
+      setIsLoggingOut(false);
+    }
+  }
 
   const sidebarContent = (
     <>
@@ -58,11 +86,19 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* New Task Button */}
-      <div className="px-6 mb-8">
+      {/* New Task + Logout */}
+      <div className="px-6 mb-8 space-y-3">
         <button className="w-full py-3 px-4 bg-[#f47144] text-[#5d1800] font-bold rounded-lg flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all">
           <span className="material-symbols-outlined">add_task</span>
           <span>New Task</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowLogoutConfirm(true)}
+          className="w-full py-3 px-4 border border-white/10 text-[#dfc0b6] font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-white/5 hover:text-[#e5e1e4] active:scale-95 transition-all"
+        >
+          <span className="material-symbols-outlined">logout</span>
+          <span>Logout</span>
         </button>
       </div>
 
@@ -83,8 +119,54 @@ export default function Sidebar() {
     </>
   );
 
+  const logoutDialog =
+    isMounted && showLogoutConfirm
+      ? createPortal(
+          <div
+            className="dashboard-logout-overlay"
+            role="presentation"
+            onClick={() => !isLoggingOut && setShowLogoutConfirm(false)}
+          >
+            <div
+              className="dashboard-logout-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="logout-dialog-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <h2 id="logout-dialog-title" className="dashboard-logout-title">
+                Log out?
+              </h2>
+              <p className="dashboard-logout-copy">
+                You will be signed out of your account and redirected to the login page.
+              </p>
+              <div className="dashboard-logout-actions">
+                <button
+                  type="button"
+                  className="dashboard-logout-cancel"
+                  onClick={() => setShowLogoutConfirm(false)}
+                  disabled={isLoggingOut}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="dashboard-logout-confirm"
+                  onClick={() => void handleLogout()}
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? "Logging out…" : "Logout"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
     <>
+      {logoutDialog}
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}

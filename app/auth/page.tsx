@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import AuthPage from "./AuthPage";
 import { createSupabaseServerClient } from "../lib/supabase/server-client";
+import { isOnboardingCompleted } from "../lib/auth/onboarding";
 import { redirect } from "next/navigation";
 
 export default async function Page() {
@@ -8,9 +9,9 @@ export default async function Page() {
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    // If already logged in, redirect to dashboard
     if (user) {
-        redirect("/dashboard");
+        const completed = await isOnboardingCompleted(user.id);
+        redirect(completed ? "/dashboard" : "/onboarding");
     }
 
     return (

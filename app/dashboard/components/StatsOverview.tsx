@@ -39,6 +39,10 @@ const DIFFICULTY_ITEMS = [
   { key: "hard" as const, label: "Hard", color: "#f63737", dotClass: "bg-[#f63737]" },
 ];
 
+const DONUT_RADIUS = 40;
+const DONUT_STROKE = 12;
+const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
+
 /**
  * Represents a single pill in the bottom platform row.
  * Can be derived from either the PlatformStat[] prop or the
@@ -52,7 +56,6 @@ interface PlatformPill {
 
 export default function StatsOverview({ difficulty, platforms }: StatsOverviewProps) {
   const diffMap: PlatformDifficultyMap = difficulty ?? DEFAULT_DIFFICULTY;
-console.log(difficulty, platforms)
   /**
    * Build platform pills from either:
    * 1. The `platforms` prop (if provided and non-empty) — uses real rating data
@@ -100,10 +103,33 @@ console.log(difficulty, platforms)
     ? (diffMap["all"] ?? { easy: 0, medium: 0, hard: 0, total: 0 })
     : (diffMap[selectedPlatform] ?? { easy: 0, medium: 0, hard: 0, total: 0 });
 
-  const total: number = d.total || 1;
-  const easyPct: number = (d.easy / total) * 100;
-  const mediumPct: number = (d.medium / total) * 100;
-  const hardPct: number = (d.hard / total) * 100;
+  // Arc lengths must be proportional to easy + medium + hard — not d.total.
+  // solved_count can exceed tagged difficulties when some problems lack tags.
+  const segmentTotal: number = d.easy + d.medium + d.hard;
+
+  const donutSegments = useMemo(() => {
+    const items = DIFFICULTY_ITEMS.map((item) => ({
+      key: item.key,
+      value: d[item.key],
+      color: item.color,
+    }));
+
+    if (segmentTotal === 0) {
+      return items.map((item) => ({ ...item, dashLen: 0, offset: 0 }));
+    }
+
+    let offset = 0;
+
+    return items.map((item, index) => {
+      const isLast = index === items.length - 1;
+      const dashLen = isLast
+        ? DONUT_CIRCUMFERENCE - offset
+        : (item.value / segmentTotal) * DONUT_CIRCUMFERENCE;
+      const segment = { ...item, dashLen, offset };
+      offset += dashLen;
+      return segment;
+    });
+  }, [d.easy, d.medium, d.hard, segmentTotal]);
 
   /** Hover on a platform pill to filter difficulty. Hover away to reset. */
   function handlePlatformHover(platformName: string): void {
@@ -131,31 +157,36 @@ console.log(difficulty, platforms)
             </span>
           )}
         </div>
-        <div className="relative w-45 h-45 lg:w-45 lg:h-45 flex items-center justify-center flex-shrink-0">
+        <div className="relative w-36 h-36 lg:w-44 lg:h-44 flex items-center justify-center flex-shrink-0">
           <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="13" />
-            {(() => {
-              const circ: number = 2 * Math.PI * 35;
-              const easyLen: number = (easyPct / 100) * circ;
-              const medLen: number = (mediumPct / 100) * circ;
-              const hardLen: number = (hardPct / 100) * circ;
-              return (
-                <>
-                  <circle cx="50" cy="50" r="35" fill="none"
-                    stroke="#6ffbbe" strokeWidth="12" strokeLinecap="butt"
-                    strokeDasharray={animated ? `${easyLen} ${circ - easyLen}` : `0 ${circ}`}
-                    strokeDashoffset="0" className="transition-all duration-1000 ease-out" />
-                  <circle cx="50" cy="50" r="35" fill="none"
-                    stroke="#ffb700" strokeWidth="12" strokeLinecap="butt"
-                    strokeDasharray={animated ? `${medLen} ${circ - medLen}` : `0 ${circ}`}
-                    strokeDashoffset={-easyLen} className="transition-all duration-1000 ease-out delay-200" />
-                  <circle cx="50" cy="50" r="35" fill="none"
-                    stroke="#f63737" strokeWidth="12" strokeLinecap="butt"
-                    strokeDasharray={animated ? `${hardLen} ${circ - hardLen}` : `0 ${circ}`}
-                    strokeDashoffset={-(easyLen + medLen)} className="transition-all duration-1000 ease-out delay-300" />
-                </>
-              );
-            })()}
+            <circle
+              cx="50"
+              cy="50"
+              r={DONUT_RADIUS}
+              fill="none"
+              stroke="rgba(255,255,255,0.05)"
+              strokeWidth={DONUT_STROKE}
+            />
+            {donutSegments.map((segment, index) => (
+              <circle
+                key={segment.key}
+                cx="50"
+                cy="50"
+                r={DONUT_RADIUS}
+                fill="none"
+                stroke={segment.color}
+                strokeWidth={DONUT_STROKE}
+                strokeLinecap="butt"
+                strokeDasharray={
+                  animated
+                    ? `${segment.dashLen} ${DONUT_CIRCUMFERENCE - segment.dashLen}`
+                    : `0 ${DONUT_CIRCUMFERENCE}`
+                }
+                strokeDashoffset={-segment.offset}
+                className="transition-all duration-1000 ease-out"
+                style={{ transitionDelay: `${index * 150}ms` }}
+              />
+            ))}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-bold text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-sans)" }}>{d.total}</span>

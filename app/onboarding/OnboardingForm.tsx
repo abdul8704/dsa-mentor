@@ -2,8 +2,9 @@
 
 import { Bricolage_Grotesque, Space_Grotesk } from "next/font/google";
 import { FormEvent, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { getBrowserClient } from "@/app/lib/supabase/browser-client";
-import { addPlatformHandles } from "../actions/profile.actions";
+import { addPlatformHandles, completeOnboarding } from "../actions/profile.actions";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -17,23 +18,19 @@ const bodyFont = Space_Grotesk({
     weight: ["400", "500", "700"],
 });
 
-type PlatformKey =
-    | "leetcode"
-    | "codeforces"
-    | "codechef"
-    | "atcoder"
-    | "hackerrank"
-    | "github";
+type PlatformKey = "leetcode" | "codeforces" | "atcoder";
 
 type FormState = Record<PlatformKey, string>;
+
+type ProfileState = {
+    name: string;
+    description: string;
+};
 
 const EMPTY_FORM_STATE: FormState = {
     leetcode: "",
     codeforces: "",
-    codechef: "",
     atcoder: "",
-    hackerrank: "",
-    github: "",
 };
 
 function buildInitialFormState(platforms: { platform: string; handle: string }[] | null): FormState {
@@ -55,20 +52,36 @@ const PLATFORM_FIELDS: Array<{
 }> = [
     { key: "leetcode", label: "LeetCode", placeholder: "your_leetcode_username" },
     { key: "codeforces", label: "Codeforces", placeholder: "your_codeforces_handle" },
-    { key: "codechef", label: "CodeChef", placeholder: "your_codechef_handle" },
     { key: "atcoder", label: "Atcoder", placeholder: "your_atcoder_handle" },
-    { key: "hackerrank", label: "HackerRank", placeholder: "your_hackerrank_handle" },
-    { key: "github", label: "GitHub", placeholder: "your_github_username" },
 ];
 
-export default function OnboardingForm({platforms}: { platforms: { platform: string; handle: string }[] | null}) {
+const LOADING_MESSAGES = [
+    "Initialising your profile…",
+    "Fetching your platform data…",
+];
+
+export default function OnboardingForm({
+    platforms,
+    profile,
+}: {
+    platforms: { platform: string; handle: string }[] | null;
+    profile: ProfileState;
+}) {
     const supabase = getBrowserClient();
     const router = useRouter();
 
     const [userId, setUserId] = useState("");
     const [formState, setFormState] = useState<FormState>(() => buildInitialFormState(platforms));
+    const [profileState, setProfileState] = useState<ProfileState>(profile);
     const [status, setStatus] = useState("Ready to collect your platform handles.");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(false);
+    const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     useEffect(() => {
         let isMounted = true;
@@ -97,8 +110,32 @@ export default function OnboardingForm({platforms}: { platforms: { platform: str
         setFormState(buildInitialFormState(platforms));
     }, [platforms]);
 
+    useEffect(() => {
+        setProfileState(profile);
+    }, [profile]);
+
+    useEffect(() => {
+        if (!isInitializing) {
+            setLoadingMessageIndex(0);
+            return;
+        }
+
+        const timer = window.setInterval(() => {
+            setLoadingMessageIndex((current) => (current + 1) % LOADING_MESSAGES.length);
+        }, 2200);
+
+        return () => window.clearInterval(timer);
+    }, [isInitializing]);
+
     function updateField(key: PlatformKey, value: string) {
         setFormState((current) => ({
+            ...current,
+            [key]: value,
+        }));
+    }
+
+    function updateProfileField(key: keyof ProfileState, value: string) {
+        setProfileState((current) => ({
             ...current,
             [key]: value,
         }));
@@ -107,12 +144,18 @@ export default function OnboardingForm({platforms}: { platforms: { platform: str
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
-        if (isSubmitting) {
+        if (isSubmitting || isInitializing) {
             return;
         }
 
         if (!userId) {
             setStatus("Unable to read your session yet. Please wait a moment and try again.");
+            return;
+        }
+
+        const trimmedName = profileState.name.trim();
+        if (!trimmedName) {
+            setStatus("Please enter your name before submitting.");
             return;
         }
 
@@ -133,18 +176,46 @@ export default function OnboardingForm({platforms}: { platforms: { platform: str
 
         try {
             await addPlatformHandles(userId, nextPayload);
-            await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/refresh/fresh-init`, { userId });
-            setStatus("Platform handles saved successfully! Redirecting to dashboard...");
+            await completeOnboarding(userId, {
+                name: trimmedName,
+                description: profileState.description,
+            });
+
+            setIsInitializing(true);
+
+            await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/refresh/fresh-init`, { user_id: userId });
             router.push("/dashboard");
         } catch {
+            setIsInitializing(false);
             setStatus("Could not save handles right now. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
     }
 
+    const loadingOverlay =
+        isMounted && isInitializing
+            ? createPortal(
+                  <div className="onboarding-loading-overlay" role="status" aria-live="polite" aria-busy="true">
+                      <div className="onboarding-loading-card">
+                          <div className="onboarding-loading-spinner-wrap" aria-hidden="true">
+                              <span className="onboarding-loading-spinner" />
+                          </div>
+                          <p className={`${headingFont.className} onboarding-loading-title`}>
+                              {LOADING_MESSAGES[loadingMessageIndex]}
+                          </p>
+                          <p className="onboarding-loading-copy">
+                              Hang tight while we pull in your stats and set up your dashboard.
+                          </p>
+                      </div>
+                  </div>,
+                  document.body
+              )
+            : null;
+
     return (
         <main className={`auth-shell onboarding-shell ${bodyFont.className}`}>
+            {loadingOverlay}
             <div className="auth-grid" />
             <div className="auth-spot auth-spot-left" />
             <div className="auth-spot auth-spot-right" />
@@ -179,6 +250,39 @@ export default function OnboardingForm({platforms}: { platforms: { platform: str
                         </div>
 
                         <form className="auth-form onboarding-form" onSubmit={handleSubmit}>
+                            <div className="onboarding-grid onboarding-profile-grid">
+                                <div className="onboarding-field onboarding-field-full">
+                                    <label className="auth-label" htmlFor="profile-name">
+                                        Name
+                                    </label>
+                                    <input
+                                        className="auth-input"
+                                        id="profile-name"
+                                        name="name"
+                                        type="text"
+                                        placeholder="Your name"
+                                        required
+                                        value={profileState.name}
+                                        onChange={(e) => updateProfileField("name", e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="onboarding-field onboarding-field-full">
+                                    <label className="auth-label" htmlFor="profile-description">
+                                        Description
+                                    </label>
+                                    <input
+                                        className="auth-input"
+                                        id="profile-description"
+                                        name="description"
+                                        type="text"
+                                        placeholder="dsa enthusiast"
+                                        value={profileState.description}
+                                        onChange={(e) => updateProfileField("description", e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
                             <div className="onboarding-grid">
                                 {PLATFORM_FIELDS.map(({ key, label, placeholder }) => (
                                     <div key={key} className="onboarding-field">
@@ -198,7 +302,7 @@ export default function OnboardingForm({platforms}: { platforms: { platform: str
                                 ))}
                             </div>
 
-                            <button className="auth-cta onboarding-cta" type="submit" disabled={isSubmitting}>
+                            <button className="auth-cta onboarding-cta" type="submit" disabled={isSubmitting || isInitializing}>
                                 {isSubmitting ? (
                                     <>
                                         <span className="onboarding-spinner" aria-hidden="true" />

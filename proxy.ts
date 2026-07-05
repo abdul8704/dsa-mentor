@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/app/lib/supabase/server-client";
 
-const PUBLIC_ROUTES = ["/", "/auth"];
+const PUBLIC_ROUTES = ["/", "/auth", "/invite"];
 const AUTH_CALLBACK_PREFIX = "/auth/callback";
 
 function isPublicRoute(path: string): boolean {
@@ -30,6 +30,7 @@ export async function proxy(req: NextRequest) {
     const isPublic = isPublicRoute(path);
     const isOnboarding = path.startsWith("/onboarding");
     const isAuth = path.startsWith("/auth");
+    const isEditingOnboarding = req.nextUrl.searchParams.get("edit") === "1";
 
     if (!user) {
         if (!isPublic) {
@@ -52,7 +53,7 @@ export async function proxy(req: NextRequest) {
         return NextResponse.redirect(new URL(destination, req.url));
     }
 
-    if (isOnboarding && onboardingCompleted) {
+    if (isOnboarding && onboardingCompleted && !isEditingOnboarding) {
         return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 

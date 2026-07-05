@@ -22,6 +22,24 @@ function getPlatformColor(platform: string): string {
   return KNOWN_PLATFORM_COLORS[platform.toLowerCase()] ?? "#e5e1e4";
 }
 
+interface TimeRangeOption {
+  label: string;
+  /** Number of days to look back from today, or null for "All Time" (no filtering). */
+  days: number | null;
+}
+
+const TIME_RANGE_OPTIONS: TimeRangeOption[] = [
+  { label: "7D", days: 7 },
+  { label: "14D", days: 14 },
+  { label: "30D", days: 30 },
+  { label: "All", days: null },
+];
+
+/** Returns today's date as an ISO string (YYYY-MM-DD) in local time. */
+function todayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
 const DEFAULT_DATA: ContestRatingData = {
   current: 0,
   peak: 0,
@@ -52,6 +70,7 @@ function buildPath(
 export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
   const d: ContestRatingData = data ?? DEFAULT_DATA;
   const [filter, setFilter] = useState<string>("All");
+  const [timeRange, setTimeRange] = useState<string>("All");
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +83,53 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
     () => ["All", ...platformNames],
     [platformNames]
   );
+
+  // Cutoff date (inclusive) for the selected time range, or null for "All Time"
+  const cutoffDate: string | null = useMemo(() => {
+    const option: TimeRangeOption | undefined = TIME_RANGE_OPTIONS.find((o) => o.label === timeRange);
+    if (!option || option.days === null) return null;
+
+    const date: Date = new Date();
+    date.setDate(date.getDate() - option.days);
+    return date.toISOString().split("T")[0];
+  }, [timeRange]);
+
+  // Per-platform history clipped to the selected time range. If a platform has
+  // no contests within the window (but has history overall), fall back to a
+  // flat line at its most recent known rating instead of dropping the line.
+  const filteredPlatformHistories: Record<string, ContestRatingPoint[]> = useMemo(() => {
+    const result: Record<string, ContestRatingPoint[]> = {};
+
+    for (const name of platformNames) {
+      const fullHistory: ContestRatingPoint[] = d.platformHistories[name] ?? [];
+
+      if (fullHistory.length === 0) {
+        result[name] = [];
+        continue;
+      }
+
+      if (!cutoffDate) {
+        result[name] = fullHistory;
+        continue;
+      }
+
+      const windowPoints: ContestRatingPoint[] = fullHistory.filter((p) => p.date >= cutoffDate);
+
+      if (windowPoints.length > 0) {
+        result[name] = windowPoints;
+        continue;
+      }
+
+      // No activity in this window — render a flat line at the last known rating.
+      const lastKnown: ContestRatingPoint = fullHistory[fullHistory.length - 1];
+      result[name] = [
+        { ...lastKnown, date: cutoffDate, contestId: `${lastKnown.contestId}-flat-start` },
+        { ...lastKnown, date: todayISO(), contestId: `${lastKnown.contestId}-flat-end` },
+      ];
+    }
+
+    return result;
+  }, [platformNames, d.platformHistories, cutoffDate]);
 
   // Reset filter if the current selection is no longer in the data
   useEffect(() => {
@@ -93,7 +159,7 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
   const { minR, maxR } = useMemo(() => {
     let allRatings: number[] = [];
     for (const key of visiblePlatforms) {
-      const pts: ContestRatingPoint[] | undefined = d.platformHistories[key];
+      const pts: ContestRatingPoint[] | undefined = filteredPlatformHistories[key];
       if (pts) allRatings = allRatings.concat(pts.map((p) => p.rating));
     }
     if (allRatings.length === 0) return { minR: 0, maxR: 100 };
@@ -103,7 +169,7 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
     if (min === max) return { minR: Math.max(0, min - 100), maxR: max + 100 };
     // Clamp minR to 0 — ratings can't be negative
     return { minR: Math.max(0, min - 50), maxR: max + 50 };
-  }, [visiblePlatforms, d.platformHistories]);
+  }, [visiblePlatforms, filteredPlatformHistories]);
 
   const range: number = maxR - minR || 1;
   const padding: number = 4;
@@ -181,7 +247,7 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
                 >
                   {p !== "All" && (
                     <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      className="w-2 h-2 rounded-full shrink-0"
                       style={{ backgroundColor: getPlatformColor(p) }}
                     />
                   )}
@@ -190,6 +256,27 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Time range filter — segmented control below the platform filter */}
+      <div className="flex justify-end mb-4">
+        <div className="inline-flex items-center gap-0.5 p-1 rounded-lg bg-white/5 border border-white/10">
+          {TIME_RANGE_OPTIONS.map((option) => (
+            <button
+              key={option.label}
+              type="button"
+              onClick={() => setTimeRange(option.label)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                timeRange === option.label
+                  ? "bg-[#f47144] text-[#5d1800]"
+                  : "text-[#a78b82] hover:text-[#dfc0b6] hover:bg-white/5"
+              }`}
+              style={{ fontFamily: "var(--font-geist-mono)" }}
+            >
+              {option.days === null ? "All Time" : `${option.days}D`}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -238,7 +325,7 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
             // Find the platform with the most data points for x-axis labels
             let longestPts: ContestRatingPoint[] = [];
             for (const key of visiblePlatforms) {
-              const pts: ContestRatingPoint[] = d.platformHistories[key] ?? [];
+              const pts: ContestRatingPoint[] = filteredPlatformHistories[key] ?? [];
               if (pts.length > longestPts.length) longestPts = pts;
             }
             const months: string[] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -266,7 +353,7 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
 
           {/* Platform lines */}
           {visiblePlatforms.map((platform) => {
-            const pts: ContestRatingPoint[] = d.platformHistories[platform] ?? [];
+            const pts: ContestRatingPoint[] = filteredPlatformHistories[platform] ?? [];
             if (pts.length === 0) return null;
 
             const color: string = getPlatformColor(platform);

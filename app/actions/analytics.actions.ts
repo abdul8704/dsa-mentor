@@ -11,6 +11,9 @@ import type {
   ContestRatingPoint,
   TopicBreakdownData,
   TopicStat,
+  RecentProblem,
+  SolvedProblemsFilters,
+  PaginatedSolvedProblems,
   DashboardData,
 } from "@/app/lib/types/analytics";
 import { createSupabaseServerClient } from "@/app/lib/supabase/server-client";
@@ -45,18 +48,21 @@ const PLATFORM_COLOR_MAP: Record<string, "primary" | "tertiary" | "secondary"> =
   codeforces: "secondary",
 };
 
+/** Only these platforms are supported by onboarding/refresh — anything else (e.g. stray "github" rows) is ignored. */
+const SUPPORTED_PLATFORMS = ["leetcode", "codeforces", "atcoder"] as const;
+
 // ─── Server Actions ─────────────────────────────────────────────────────────
 
 /**
  * Fetches the user's profile from the `profile` table.
- * Title, avatarUrl, and level are not stored in DB — they remain defaults.
+ * Title and level are not stored in DB — they remain defaults.
  */
 export async function getUserProfile(userId: string): Promise<UserProfile> {
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("profile")
-    .select("name")
+    .select("name, avatar_url")
     .eq("user_id", userId)
     .single();
 
@@ -68,7 +74,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
   const profile: UserProfile = {
     name: data.name ?? "User",
     title: "DSA Enthusiast",
-    avatarUrl: "",
+    avatarUrl: data.avatar_url ?? "",
     level: 1,
   };
 
@@ -282,7 +288,8 @@ export async function getDifficultyStats(userId: string): Promise<PlatformDiffic
   const { data, error } = await supabase
     .from("user_platform_data")
     .select("platform, easy, medium, hard, solved_count")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .in("platform", SUPPORTED_PLATFORMS);
 
     if (error) {
     console.error("Error fetching difficulty stats:", error);
@@ -336,7 +343,8 @@ export async function getPlatformStats(userId: string): Promise<PlatformStat[]> 
   const { data, error } = await supabase
     .from("user_platform_data")
     .select("platform, solved_count, rating, max_rating")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .in("platform", SUPPORTED_PLATFORMS);
 
   if (error) {
     console.error("Error fetching platform stats:", error);
@@ -569,6 +577,190 @@ function countTags(rows: any[]): Record<string, number> {
   return counts;
 }
 
+/**
+ * Fetches the user's most recently solved problems, joined with `problems`
+ * for title, difficulty, rating, and tags. Ordered newest-first.
+ */
+export async function getRecentSolvedProblems(
+  userId: string,
+  limit: number = 30
+): Promise<RecentProblem[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("solved_problems")
+    .select("problem_id, platform, solved_date, solved_at, already_solved, problems(title, difficulty, rating, tags)")
+    .eq("user_id", userId)
+    .in("platform", SUPPORTED_PLATFORMS)
+    .order("solved_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching recent solved problems:", error);
+    return [];
+  }
+
+  if (!data) return [];
+
+  return data.map((row): RecentProblem => {
+    // Supabase types the join as an array (isOneToOne: false), but it
+    // returns a single object since we join via problem_id FK.
+    const problemData = row.problems as unknown as {
+      title: string;
+      difficulty: string | null;
+      rating: number | null;
+      tags: string[] | null;
+    } | null;
+
+    return {
+      problemId: row.problem_id,
+      title: problemData?.title ?? row.problem_id,
+      difficulty: problemData?.difficulty ?? null,
+      rating: problemData?.rating ?? null,
+      platform: row.platform,
+      tags: problemData?.tags ?? [],
+      solvedDate: row.solved_date,
+      alreadySolved: row.already_solved ?? false,
+    };
+  });
+}
+
+/**
+ * Splits a raw search string into normalized, deduplicated tokens for fuzzy
+ * partial matching (e.g. "two sum" and "sum two" should both match "Two Sum").
+ * Strips punctuation, collapses whitespace, and caps the token count to keep
+ * the generated query reasonably sized.
+ */
+function tokenizeSearch(search: string): string[] {
+  const tokens: string[] = search
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+
+  return Array.from(new Set(tokens)).slice(0, 6);
+}
+
+/**
+ * Fetches a single page of the user's solved problems, joined with `problems`,
+ * with optional filtering by problem name, platform, difficulty, topic tag,
+ * and solved-date range. Powers the standalone "All Solved Problems" page.
+ *
+ * Uses a `!inner` join on `problems` so filters on joined columns (title,
+ * difficulty, tags) also constrain which `solved_problems` rows are returned.
+ */
+export async function getPaginatedSolvedProblems(
+  userId: string,
+  page: number,
+  pageSize: number,
+  filters: SolvedProblemsFilters = {}
+): Promise<PaginatedSolvedProblems> {
+  const supabase = await createSupabaseServerClient();
+
+  const safePage: number = Math.max(1, page);
+  const from: number = (safePage - 1) * pageSize;
+  const to: number = from + pageSize - 1;
+
+  let query = supabase
+    .from("solved_problems")
+    .select(
+      "problem_id, platform, solved_date, solved_at, already_solved, problems!inner(title, difficulty, rating, tags)",
+      { count: "exact" }
+    )
+    .eq("user_id", userId)
+    .in("platform", SUPPORTED_PLATFORMS);
+
+  if (filters.platform) {
+    query = query.eq("platform", filters.platform);
+  }
+
+  if (filters.dateFrom) {
+    query = query.gte("solved_date", filters.dateFrom);
+  }
+
+  if (filters.dateTo) {
+    query = query.lte("solved_date", filters.dateTo);
+  }
+
+  if (filters.search) {
+    // Fuzzy/partial match: every whitespace-separated token must appear
+    // somewhere in the title, in any order (e.g. "cycle linked" still
+    // matches "Linked List Cycle II").
+    const tokens: string[] = tokenizeSearch(filters.search);
+    for (const token of tokens) {
+      query = query.ilike("problems.title", `%${token}%`);
+    }
+  }
+
+  if (filters.difficulty) {
+    query = query.eq("problems.difficulty", filters.difficulty);
+  }
+
+  if (filters.topic) {
+    query = query.contains("problems.tags", [filters.topic]);
+  }
+
+  const { data, error, count } = await query
+    .order("solved_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    console.error("Error fetching paginated solved problems:", error);
+    return { problems: [], totalCount: 0 };
+  }
+
+  const problems: RecentProblem[] = (data ?? []).map((row): RecentProblem => {
+    const problemData = row.problems as unknown as {
+      title: string;
+      difficulty: string | null;
+      rating: number | null;
+      tags: string[] | null;
+    } | null;
+
+    return {
+      problemId: row.problem_id,
+      title: problemData?.title ?? row.problem_id,
+      difficulty: problemData?.difficulty ?? null,
+      rating: problemData?.rating ?? null,
+      platform: row.platform,
+      tags: problemData?.tags ?? [],
+      solvedDate: row.solved_date,
+      alreadySolved: row.already_solved ?? false,
+    };
+  });
+
+  return { problems, totalCount: count ?? 0 };
+}
+
+/**
+ * Fetches the distinct set of topic tags across every problem the user has
+ * solved. Used to populate the "Topic" filter dropdown on the solved
+ * problems page.
+ */
+export async function getUserTopicOptions(userId: string): Promise<string[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("solved_problems")
+    .select("problems(tags)")
+    .eq("user_id", userId)
+    .in("platform", SUPPORTED_PLATFORMS);
+
+  if (error || !data) {
+    if (error) console.error("Error fetching topic options:", error);
+    return [];
+  }
+
+  const tagSet = new Set<string>();
+  for (const row of data) {
+    const problemData = row.problems as unknown as { tags: string[] | null } | null;
+    (problemData?.tags ?? []).forEach((tag) => tagSet.add(tag));
+  }
+
+  return Array.from(tagSet).sort((a, b) => a.localeCompare(b));
+}
+
 // ─── Aggregated fetch ───────────────────────────────────────────────────────
 
 /**
@@ -576,7 +768,7 @@ function countTags(rows: any[]): Record<string, number> {
  * This is the primary entry point called by the dashboard page.
  */
 export async function getDashboardData(userId: string): Promise<DashboardData> {
-  const [profile, streak, heatmap, difficulty, platforms, contestRating, topics]: [
+  const [profile, streak, heatmap, difficulty, platforms, contestRating, topics, recentProblems]: [
     UserProfile,
     StreakData,
     HeatmapDay[],
@@ -584,6 +776,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     PlatformStat[],
     ContestRatingData,
     TopicBreakdownData,
+    RecentProblem[],
   ] = await Promise.all([
     getUserProfile(userId),
     getStreakData(userId),
@@ -592,6 +785,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     getPlatformStats(userId),
     getContestRatingData(userId),
     getTopicBreakdown(userId),
+    getRecentSolvedProblems(userId),
   ]);
 
   const data: DashboardData = {
@@ -602,6 +796,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     platforms,
     contestRating,
     topics,
+    recentProblems,
   };
 
   return data;

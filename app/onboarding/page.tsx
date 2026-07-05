@@ -3,7 +3,14 @@ import { createSupabaseServerClient } from "../lib/supabase/server-client";
 import { ensureProfile, isOnboardingCompleted } from "../lib/auth/onboarding";
 import OnboardingForm from "./OnboardingForm";
 
-export default async function Page() {
+export default async function Page({
+    searchParams,
+}: {
+    searchParams: Promise<{ edit?: string }>;
+}) {
+    const { edit } = await searchParams;
+    const isEditing = edit === "1";
+
     const supabase = await createSupabaseServerClient();
 
     const {
@@ -16,7 +23,7 @@ export default async function Page() {
 
     await ensureProfile(user.id);
 
-    if (await isOnboardingCompleted(user.id)) {
+    if (!isEditing && (await isOnboardingCompleted(user.id))) {
         redirect("/dashboard");
     }
 
@@ -27,7 +34,7 @@ export default async function Page() {
             .eq("user_id", user.id),
         supabase
             .from("profile")
-            .select("name, description")
+            .select("name, description, avatar_url")
             .eq("user_id", user.id)
             .maybeSingle(),
     ]);
@@ -38,6 +45,7 @@ export default async function Page() {
             profile={{
                 name: profile?.name ?? user.user_metadata?.name ?? "",
                 description: profile?.description ?? "",
+                avatarUrl: profile?.avatar_url ?? "",
             }}
         />
     );

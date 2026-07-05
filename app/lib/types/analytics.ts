@@ -87,6 +87,34 @@ export interface TopicBreakdownData {
   last7Days: TopicStat[];
 }
 
+/** A single row in the "Recently Solved" problems table. */
+export interface RecentProblem {
+  problemId: string;
+  title: string;
+  difficulty: string | null;
+  rating: number | null;
+  platform: string;
+  tags: string[];
+  solvedDate: string;
+  /** True if the user had already solved this problem before this record. */
+  alreadySolved: boolean;
+}
+
+/** Filters accepted by `getPaginatedSolvedProblems`. All fields are optional/AND-combined. */
+export interface SolvedProblemsFilters {
+  search?: string;
+  platform?: string;
+  difficulty?: string;
+  topic?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface PaginatedSolvedProblems {
+  problems: RecentProblem[];
+  totalCount: number;
+}
+
 // ─── Full dashboard data bundle ─────────────────────────────────────────────
 export interface DashboardData {
   profile: UserProfile;
@@ -96,4 +124,5 @@ export interface DashboardData {
   platforms: PlatformStat[];
   contestRating: ContestRatingData;
   topics: TopicBreakdownData;
+  recentProblems: RecentProblem[];
 }

@@ -2,25 +2,35 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getBrowserClient } from "@/app/lib/supabase/browser-client";
+import { respondToInvite } from "@/app/actions/mentorship.actions";
+import type { PendingInvite } from "@/app/lib/types/mentorship";
+
+/** Renders a short "time ago" label (e.g. "3d ago", "2h ago") for an ISO timestamp. */
+function timeAgo(isoDate: string): string {
+  const diffMs: number = Date.now() - new Date(isoDate).getTime();
+  const minutes: number = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours: number = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days: number = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 const NAV_ITEMS = [
   { label: "Dashboard", icon: "dashboard", href: "/dashboard" },
   { label: "Mentees", icon: "group", href: "/dashboard/mentees" },
-  { label: "Curriculum", icon: "terminal", href: "/dashboard/curriculum" },
   { label: "Tasks", icon: "assignment", href: "/dashboard/tasks" },
-  { label: "Analytics", icon: "insights", href: "/dashboard/analytics" },
-  { label: "Community", icon: "forum", href: "/dashboard/community" },
 ];
 
 const FOOTER_ITEMS = [
-  { label: "Settings", icon: "settings", href: "/dashboard/settings" },
-  { label: "Support", icon: "help", href: "/dashboard/support" },
+  { label: "Settings", icon: "settings", href: "/onboarding?edit=1" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ initialInvites }: { initialInvites: PendingInvite[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = getBrowserClient();
@@ -28,10 +38,50 @@ export default function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [invites, setInvites] = useState<PendingInvite[]>(initialInvites);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [respondingToken, setRespondingToken] = useState<string | null>(null);
+  const [inviteFeedback, setInviteFeedback] = useState<{ token: string; message: string } | null>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    setInvites(initialInvites);
+  }, [initialInvites]);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [notifOpen]);
+
+  async function handleInviteResponse(token: string, accept: boolean) {
+    if (respondingToken) return;
+    setRespondingToken(token);
+    setInviteFeedback(null);
+
+    try {
+      const result = await respondToInvite(token, accept);
+      if (result.success) {
+        setInvites((prev) => prev.filter((invite) => invite.token !== token));
+        router.refresh();
+      } else {
+        setInviteFeedback({ token, message: result.message });
+      }
+    } catch {
+      setInviteFeedback({ token, message: "Something went wrong. Please try again." });
+    } finally {
+      setRespondingToken(null);
+    }
+  }
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -67,6 +117,85 @@ export default function Sidebar() {
         </p>
       </div>
 
+      {/* Notifications */}
+      <div className="px-6 mb-4 relative" ref={notifRef}>
+        <button
+          type="button"
+          onClick={() => setNotifOpen((open) => !open)}
+          className={`w-full flex items-center justify-between px-0 py-3 transition-all duration-300 ${
+            notifOpen ? "text-[#ffb59d]" : "text-[#dfc0b6] hover:text-[#e5e1e4]"
+          }`}
+        >
+          <span className="flex items-center">
+            <span className="material-symbols-outlined mr-4">notifications</span>
+            <span className="text-[16px]">Notifications</span>
+          </span>
+          {invites.length > 0 && (
+            <span className="min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full bg-[#f47144] text-[#5d1800] text-[12px] font-bold">
+              {invites.length > 9 ? "9+" : invites.length}
+            </span>
+          )}
+        </button>
+
+        {notifOpen && (
+          <div
+            className="absolute left-full top-0 ml-2 w-80 max-w-[85vw] max-h-[440px] overflow-y-auto rounded-xl border border-white/10 z-80 shadow-2xl"
+            style={{ background: "rgba(26, 25, 28, 0.98)", backdropFilter: "blur(24px)" }}
+          >
+            <div className="px-4 py-3 border-b border-white/10">
+              <p className="text-[14px] font-bold text-[#e5e1e4]">Invitations</p>
+            </div>
+
+            {invites.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <span className="material-symbols-outlined text-[28px] text-[#dfc0b6] opacity-50">
+                  notifications_off
+                </span>
+                <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">No pending invitations.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-white/5">
+                {invites.map((invite) => {
+                  const isResponding = respondingToken === invite.token;
+                  const feedback = inviteFeedback?.token === invite.token ? inviteFeedback.message : null;
+                  return (
+                    <li key={invite.token} className="px-4 py-3">
+                      <p className="text-[14px] text-[#e5e1e4] leading-snug">
+                        <span className="font-semibold text-[#ffb59d]">{invite.mentorName}</span> invited you to
+                        connect as their mentee.
+                      </p>
+                      <p className="text-[12px] text-[#dfc0b6] opacity-60 mt-1">{timeAgo(invite.createdAt)}</p>
+                      <div className="flex items-center gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => void handleInviteResponse(invite.token, true)}
+                          disabled={respondingToken !== null}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-[#f47144] text-[#5d1800] text-[13px] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
+                        >
+                          <span className={`material-symbols-outlined text-[16px] ${isResponding ? "animate-spin" : ""}`}>
+                            {isResponding ? "progress_activity" : "check"}
+                          </span>
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleInviteResponse(invite.token, false)}
+                          disabled={respondingToken !== null}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 border border-white/10 text-[#dfc0b6] text-[13px] font-semibold rounded-lg hover:bg-white/5 hover:text-[#e5e1e4] active:scale-95 transition-all disabled:opacity-60"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                      {feedback && <p className="text-[12px] text-[#dfc0b6] opacity-80 mt-2">{feedback}</p>}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Nav Links */}
       <nav className="flex-1 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => (
@@ -88,10 +217,14 @@ export default function Sidebar() {
 
       {/* New Task + Logout */}
       <div className="px-6 mb-8 space-y-3">
-        <button className="w-full py-3 px-4 bg-[#f47144] text-[#5d1800] font-bold rounded-lg flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all">
-          <span className="material-symbols-outlined">add_task</span>
-          <span>New Task</span>
-        </button>
+        <Link
+          href="/dashboard/mentees"
+          onClick={() => setMobileOpen(false)}
+          className="w-full py-3 px-4 bg-[#f47144] text-[#5d1800] font-bold rounded-lg flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
+        >
+          <span className="material-symbols-outlined">person_add</span>
+          <span>Invite mentee</span>
+        </Link>
         <button
           type="button"
           onClick={() => setShowLogoutConfirm(true)}

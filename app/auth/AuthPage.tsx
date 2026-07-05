@@ -163,7 +163,11 @@ export default function AuthPage({ user }: EmailPassword) {
                 } else {
                     setStatus("Logged in successfully!");
                     setStatusType("success");
-                    router.push("/dashboard");
+                    // Honor a safe internal ?redirect= target (e.g. an invite link)
+                    // so users who arrive via an invite land back on it after login.
+                    const redirect = searchParams.get("redirect");
+                    const safeRedirect = redirect && redirect.startsWith("/") ? redirect : "/dashboard";
+                    router.push(safeRedirect);
                 }
             }
             catch(err) {

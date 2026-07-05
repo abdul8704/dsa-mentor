@@ -6,6 +6,7 @@ import type { DashboardData } from "../lib/types/analytics";
 
 import ProfileCard from "./components/ProfileCard";
 import StreakStatsCard from "./components/StreakStatsCard";
+import RecentProblemsTable from "./components/RecentProblemsTable";
 import Heatmap from "./components/Heatmap";
 import StatsOverview from "./components/StatsOverview";
 import ContestRatingGraph from "./components/ContestRatingGraph";
@@ -36,7 +37,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Profile Card — 50% */}
         <div>
-          <ProfileCard profile={data.profile} streak={data.streak} />
+          <ProfileCard profile={data.profile} streak={data.streak} userId={user.id} />
         </div>
 
         {/* Stats 2×2 Grid — 50% */}
@@ -44,6 +45,9 @@ export default async function DashboardPage() {
           <StreakStatsCard streak={data.streak} />
         </div>
       </div>
+
+      {/* Recently Solved Problems Table */}
+      <RecentProblemsTable data={data.recentProblems} />
 
       {/* Heatmap Section */}
       <Heatmap data={data.heatmap} />

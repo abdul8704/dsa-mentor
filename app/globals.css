@@ -1512,6 +1512,24 @@ body {
   }
 }
 
+/* ─── Shared loading card (route transitions + in-modal async actions) ────── */
+
+.dashboard-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 4px solid rgba(244, 113, 68, 0.15);
+  border-top-color: #f47144;
+  border-right-color: #ffb59d;
+  animation: spin 750ms linear infinite;
+}
+
+.dashboard-loading-spinner--sm {
+  width: 28px;
+  height: 28px;
+  border-width: 3px;
+}
+
 .dashboard-shell main > div {
   animation: dashboard-fade-in 500ms ease-out;
 }

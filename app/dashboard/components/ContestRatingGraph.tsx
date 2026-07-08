@@ -176,6 +176,17 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
   const chartH: number = 50 - padding * 2;
   const chartW: number = 120;
 
+  // Stats for a single selected platform — computed from the platform's full
+  // (unfiltered by time range) history so they reflect true current standing.
+  const platformStats: { current: number; diff: number; total: number } | null = useMemo(() => {
+    if (filter === "All") return null;
+    const hist: ContestRatingPoint[] = d.platformHistories[filter] ?? [];
+    const total: number = hist.length;
+    const current: number = total > 0 ? hist[total - 1].rating : 0;
+    const diff: number = total >= 2 ? hist[total - 1].rating - hist[total - 2].rating : 0;
+    return { current, diff, total };
+  }, [filter, d.platformHistories]);
+
   // Y-axis tick values
   const ticks: number[] = useMemo(() => {
     const step: number = Math.ceil(range / 4 / 50) * 50 || 50;
@@ -413,24 +424,35 @@ export default function ContestRatingGraph({ data }: ContestRatingGraphProps) {
 
       {/* Stats Row */}
       <div className="flex justify-between mt-4 pt-3 border-t border-white/5">
-        <div className="text-center">
-          <span className="block text-sm text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-mono)" }}>
-            {d.current.toLocaleString()}
-          </span>
-          <span className="text-[9px] text-[#dfc0b6] uppercase">Current</span>
-        </div>
-        <div className="text-center">
-          <span className={`block text-sm ${d.momChange >= 0 ? "text-[#4edea3]" : "text-[#ffb4ab]"}`} style={{ fontFamily: "var(--font-geist-mono)" }}>
-            {d.momChange >= 0 ? "+" : ""}{d.momChange}
-          </span>
-          <span className="text-[9px] text-[#dfc0b6] uppercase">MoM Change</span>
-        </div>
-        <div className="text-center">
-          <span className="block text-sm text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-mono)" }}>
-            {d.totalContests}
-          </span>
-          <span className="text-[9px] text-[#dfc0b6] uppercase">Contests</span>
-        </div>
+        {filter === "All" || !platformStats ? (
+          <div className="flex-1 text-center">
+            <span className="block text-2xl text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+              {d.totalContests}
+            </span>
+            <span className="text-[9px] text-[#dfc0b6] uppercase">Contests</span>
+          </div>
+        ) : (
+          <>
+            <div className="text-center">
+              <span className="block text-sm text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                {platformStats.current.toLocaleString()}
+              </span>
+              <span className="text-[9px] text-[#dfc0b6] uppercase">Current</span>
+            </div>
+            <div className="text-center">
+              <span className={`block text-sm ${platformStats.diff >= 0 ? "text-[#4edea3]" : "text-[#ffb4ab]"}`} style={{ fontFamily: "var(--font-geist-mono)" }}>
+                {platformStats.diff >= 0 ? "+" : ""}{platformStats.diff}
+              </span>
+              <span className="text-[9px] text-[#dfc0b6] uppercase">Last Change</span>
+            </div>
+            <div className="text-center">
+              <span className="block text-sm text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                {platformStats.total}
+              </span>
+              <span className="text-[9px] text-[#dfc0b6] uppercase">Contests</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

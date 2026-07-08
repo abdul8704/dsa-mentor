@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SiLeetcode, SiCodeforces } from "react-icons/si";
+import type { IconType } from "react-icons";
 import type { RecentContest } from "@/app/lib/types/analytics";
 
 interface RecentContestsProps {
@@ -9,10 +11,32 @@ interface RecentContestsProps {
   total?: number;
 }
 
-const PLATFORM_META: Record<RecentContest["platform"], { label: string; icon: string; color: string }> = {
-  codeforces: { label: "Codeforces", icon: "public", color: "#4ecbf4" },
-  leetcode: { label: "LeetCode", icon: "code", color: "#ffb700" },
-  atcoder: { label: "AtCoder", icon: "terminal", color: "#4edea3" },
+/** Simplified AtCoder monogram — no official brand SVG ships in Simple Icons, so we render a consistent "AC" glyph instead (matches RecentProblemsTable). */
+const AtCoderIcon: IconType = ({ size = 24 }) => {
+  const resolvedSize = typeof size === "number" ? size : parseInt(size, 10) || 24;
+
+  return (
+    <svg width={resolvedSize} height={resolvedSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="22" height="22" rx="6" fill="currentColor" fillOpacity="0.16" />
+      <text
+        x="12"
+        y="16.5"
+        textAnchor="middle"
+        fontSize="10"
+        fontWeight="800"
+        fontFamily="var(--font-geist-mono)"
+        fill="currentColor"
+      >
+        AC
+      </text>
+    </svg>
+  );
+};
+
+const PLATFORM_META: Record<RecentContest["platform"], { label: string; Icon: IconType; color: string }> = {
+  codeforces: { label: "Codeforces", Icon: SiCodeforces, color: "#4ecbf4" },
+  leetcode: { label: "LeetCode", Icon: SiLeetcode, color: "#ffb700" },
+  atcoder: { label: "AtCoder", Icon: AtCoderIcon, color: "#4edea3" },
 };
 
 /** Formats a duration in minutes as e.g. "2h 30m" or "45m". */
@@ -84,6 +108,7 @@ export default function RecentContests({ contests, attendedCount, total }: Recen
         <ul className="flex flex-col divide-y divide-white/5">
           {list.map((contest) => {
             const meta = PLATFORM_META[contest.platform];
+            const Icon = meta.Icon;
             return (
               <li key={contest.contestId} className="py-3 first:pt-0 last:pb-0">
                 <a
@@ -94,11 +119,9 @@ export default function RecentContests({ contests, attendedCount, total }: Recen
                 >
                   <span
                     className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: `${meta.color}1a` }}
+                    style={{ backgroundColor: `${meta.color}1a`, color: meta.color }}
                   >
-                    <span className="material-symbols-outlined text-[18px]" style={{ color: meta.color }}>
-                      {meta.icon}
-                    </span>
+                    <Icon size={18} />
                   </span>
 
                   <div className="min-w-0 flex-1">

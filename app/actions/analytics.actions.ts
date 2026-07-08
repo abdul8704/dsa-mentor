@@ -445,9 +445,17 @@ export async function getContestRatingData(userId: string): Promise<ContestRatin
   // Derive summary stats
   const totalContests: number = data.length;
   const latestRating: number = data[data.length - 1].rating ?? 0;
-  const previousRating: number =
-    data.length >= 2 ? (data[data.length - 2].rating ?? 0) : 0;
   const peakRating: number = Math.max(...data.map((r) => r.rating ?? 0));
+
+  // Compare the last two contests on the *same* platform as the most recent
+  // contest — comparing across platforms (e.g. Codeforces vs AtCoder) would
+  // mix incompatible rating scales and produce meaningless deltas.
+  const latestPlatform: string = data[data.length - 1].platform;
+  const samePlatformHistory = data.filter((row) => row.platform === latestPlatform);
+  const previousRating: number =
+    samePlatformHistory.length >= 2
+      ? (samePlatformHistory[samePlatformHistory.length - 2].rating ?? 0)
+      : latestRating;
   const momChange: number = latestRating - previousRating;
 
   const result: ContestRatingData = {

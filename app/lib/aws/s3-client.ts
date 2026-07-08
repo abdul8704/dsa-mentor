@@ -1,5 +1,5 @@
 import "server-only";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 /**
  * S3 client for profile picture uploads (server-only). Requires the bucket to
@@ -69,6 +69,41 @@ export async function deleteFromS3(key: string): Promise<void> {
         await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
     } catch (error) {
         console.error(`[s3] Failed to delete key "${key}": ${error instanceof Error ? error.message : error}`);
+    }
+}
+
+/**
+ * Best-effort deletion of every object under a key prefix (e.g. all of a
+ * user's avatar revisions, not just the one referenced by their profile
+ * row). Paginates through ListObjectsV2 and batch-deletes in chunks of 1000
+ * (the S3 DeleteObjects limit). Never throws — account wipes should not fail
+ * because of an S3 hiccup.
+ */
+export async function deleteS3Prefix(prefix: string): Promise<number> {
+    try {
+        const bucket = getEnv("AWS_S3_BUCKET_NAME");
+        const client = getS3Client();
+        let deleted = 0;
+        let continuationToken: string | undefined;
+
+        do {
+            const listed = await client.send(
+                new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: continuationToken })
+            );
+
+            const keys = (listed.Contents ?? []).flatMap((obj) => (obj.Key ? [{ Key: obj.Key }] : []));
+            if (keys.length > 0) {
+                await client.send(new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: keys } }));
+                deleted += keys.length;
+            }
+
+            continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+        } while (continuationToken);
+
+        return deleted;
+    } catch (error) {
+        console.error(`[s3] Failed to delete prefix "${prefix}": ${error instanceof Error ? error.message : error}`);
+        return 0;
     }
 }
 

@@ -30,11 +30,11 @@ export interface MenteeSummary {
     /** Problems solved today (used as the "+N" subtext next to totalSolved). */
     solvedToday: number;
     last7DaysSolved: number;
-    /** Per-day solved count for the last 7 days (index 0 = 7 days ago, index 6 = today). Same shape as the dashboard chart. */
+    /** Per-day solved count for the last 7 days (index 0 = 6 days ago, index 6 = today). Same shape as the dashboard chart. */
     last7DaysBreakdown: number[];
-    /** Contests attended in the last 7 days. */
+    /** Contests the mentee attended in the last 7 days (matched against the real schedule). */
     contestsThisWeek: number;
-    /** Denominator shown alongside contestsThisWeek (mirrors the dashboard's weekly target). */
+    /** Total contests held across all platforms in the last 7 days (shared across the roster). */
     contestsTotal: number;
     /** Up to 3 most-frequent problem tags among problems solved in the last 7 days. */
     topTags: string[];

@@ -149,7 +149,7 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
             className="text-xs tracking-[0.12em] font-medium uppercase text-[#a78b82]"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
-            Difficulty
+            Stats Overview
           </h4>
           {selectedPlatform && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-[#dfc0b6] capitalize">

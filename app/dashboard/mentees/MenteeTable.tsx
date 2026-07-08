@@ -5,7 +5,7 @@ import Link from "next/link";
 import Last7DaysChart from "../components/Last7DaysChart";
 import type { MenteeSummary } from "@/app/lib/types/mentorship";
 
-export const TABLE_GRID_COLS = "minmax(170px,1.1fr) minmax(220px,1.6fr) 110px minmax(150px,1.1fr) minmax(150px,1fr) 40px";
+export const TABLE_GRID_COLS = "minmax(170px,1.1fr) minmax(220px,1.6fr) 110px minmax(150px,1.1fr) minmax(150px,1fr) 110px";
 
 /**
  * Shared mentee stats table, reused on the main roster page and on
@@ -136,16 +136,26 @@ function MenteeRow({ mentee, onNote }: { mentee: MenteeSummary; onNote: () => vo
                 </div>
             </div>
 
-            {/* Quick action */}
-            <button
-                type="button"
-                onClick={onNote}
-                className="justify-self-end text-[#dfc0b6] hover:text-[#ffb59d] transition-colors"
-                aria-label={`Send note to ${mentee.name}`}
-                title="Send note"
-            >
-                <span className="material-symbols-outlined text-[20px]">chat</span>
-            </button>
+            {/* Quick actions */}
+            <div className="flex items-center justify-end gap-3">
+                <Link
+                    href={`/dashboard/mentees/${mentee.userId}`}
+                    className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#dfc0b6] hover:text-[#ffb59d] transition-colors"
+                    title="View full dashboard"
+                >
+                    <span className="material-symbols-outlined text-[16px]">visibility</span>
+                    View
+                </Link>
+                <button
+                    type="button"
+                    onClick={onNote}
+                    className="text-[#dfc0b6] hover:text-[#ffb59d] transition-colors"
+                    aria-label={`Send note to ${mentee.name}`}
+                    title="Send note"
+                >
+                    <span className="material-symbols-outlined text-[20px]">chat</span>
+                </button>
+            </div>
         </div>
     );
 }

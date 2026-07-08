@@ -44,6 +44,7 @@ export default function TopicProgressBars({ data }: TopicProgressBarsProps) {
   const visibleTopics = expanded ? topics : topics.slice(0, INITIAL_COUNT);
   const maxPct = Math.max(...topics.map((t) => t.percentage), 1);
   const hasMore = topics.length > INITIAL_COUNT;
+  const isEmpty = topics.length === 0;
 
   return (
     <div className="glass-card rounded-xl p-6 lg:p-8">
@@ -54,6 +55,19 @@ export default function TopicProgressBars({ data }: TopicProgressBarsProps) {
         Topic Breakdown — Last 7 Days
       </h4>
 
+      {isEmpty ? (
+        <div className="flex flex-col items-center justify-center text-center py-8 gap-2">
+          <span className="material-symbols-outlined text-3xl text-[#a78b82]">
+            inbox
+          </span>
+          <p
+            className="text-[13px] text-[#dfc0b6]"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
+          >
+            No problems solved in the last 7 days
+          </p>
+        </div>
+      ) : (
       <div className="space-y-4">
         {visibleTopics.map((t, i) => {
           const barWidth = animated ? (t.percentage / maxPct) * 100 : 0;
@@ -113,9 +127,10 @@ export default function TopicProgressBars({ data }: TopicProgressBarsProps) {
           );
         })}
       </div>
+      )}
 
       {/* View More / View Less */}
-      {hasMore && (
+      {!isEmpty && hasMore && (
         <div className="mt-5 pt-4 border-t border-white/5">
           <button
             onClick={() => setExpanded(!expanded)}

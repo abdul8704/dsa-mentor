@@ -16,7 +16,7 @@ export interface StreakData {
   last7DaysSolved: number;
   /** Percentage change vs previous 7 days (positive = up, negative = down) */
   last7DaysChange: number;
-  /** Per-day solved count for last 7 days (index 0 = 7 days ago, index 6 = today) */
+  /** Per-day solved count for last 7 days (index 0 = 6 days ago, index 6 = today) */
   last7DaysBreakdown: number[];
   solvedThisMonth: number;
   solvedPrev30Days: number;
@@ -113,6 +113,35 @@ export interface SolvedProblemsFilters {
 export interface PaginatedSolvedProblems {
   problems: RecentProblem[];
   totalCount: number;
+}
+
+/** A contest scheduled to start soon on one of the supported platforms. */
+export interface UpcomingContest {
+  platform: "codeforces" | "leetcode" | "atcoder";
+  name: string;
+  url: string;
+  startTime: string; // ISO timestamp
+  durationMinutes: number;
+}
+
+/** A contest that took place within the last 7 days, with the viewer's attendance. */
+export interface RecentContest {
+  platform: "codeforces" | "leetcode" | "atcoder";
+  name: string;
+  url: string;
+  startTime: string; // ISO timestamp
+  durationMinutes: number;
+  /** Matches the `contest_id` stored in `user_contest` (e.g. "CF-1234", "LC-weekly-contest-380"). */
+  contestId: string;
+  /** True if the user participated (has a `user_contest` row for this contest). */
+  attended: boolean;
+}
+
+/** Recent-contest list plus the attended/total tally for the last 7 days. */
+export interface RecentContestsResult {
+  contests: RecentContest[];
+  attendedCount: number;
+  total: number;
 }
 
 // ─── Full dashboard data bundle ─────────────────────────────────────────────

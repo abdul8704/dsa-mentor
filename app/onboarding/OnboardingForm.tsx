@@ -58,16 +58,28 @@ const PLATFORM_FIELDS: Array<{
 ];
 
 const LOADING_MESSAGES = [
-    "Initialising your profile…",
-    "Fetching your platform data…",
+    "Saving your platform handles…",
+    "Verifying your handles…",
 ];
+
+type InvalidHandle = { platform: string; handle?: string; error?: string };
+
+type SyncResult = {
+    verified: string[];
+    invalid: InvalidHandle[];
+    /** True when the worker service couldn't be reached at all (network error/timeout). */
+    unreachable?: boolean;
+};
 
 export default function OnboardingForm({
     platforms,
     profile,
+    isEditing = false,
 }: {
     platforms: { platform: string; handle: string }[] | null;
     profile: ProfileState;
+    /** True when reached via the "Settings" link (/onboarding?edit=1) rather than first-time setup. */
+    isEditing?: boolean;
 }) {
     const supabase = getBrowserClient();
     const router = useRouter();
@@ -79,6 +91,7 @@ export default function OnboardingForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isInitializing, setIsInitializing] = useState(false);
     const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+    const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
     const [isMounted, setIsMounted] = useState(false);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
@@ -87,6 +100,9 @@ export default function OnboardingForm({
     const [avatarError, setAvatarError] = useState<string | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const avatarObjectUrlRef = useRef<string | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -231,6 +247,36 @@ export default function OnboardingForm({
         }
     }
 
+    async function handleDeleteAccount() {
+        if (isDeletingAccount) return;
+        setIsDeletingAccount(true);
+        setDeleteError(null);
+
+        try {
+            const res = await fetch("/api/account/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ confirmation: "DELETE" }),
+            });
+            const data: { success: boolean; message: string } = await res.json();
+
+            if (!data.success) {
+                setDeleteError(data.message || "Could not delete your account. Please try again.");
+                setIsDeletingAccount(false);
+                return;
+            }
+
+            // The server already cleared the session cookie; drop the local
+            // client-side session too so nothing stale lingers in this tab.
+            await supabase.auth.signOut();
+            setShowDeleteConfirm(false);
+            router.push("/auth");
+        } catch {
+            setDeleteError("Something went wrong. Please check your connection and try again.");
+            setIsDeletingAccount(false);
+        }
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
@@ -271,28 +317,57 @@ export default function OnboardingForm({
                 description: profileState.description,
             });
 
-            // Only kick off the (slow) worker sync when a platform handle was
-            // actually added/changed. Saving just the name/description, or
-            // re-submitting unchanged handles, shouldn't trigger a resync.
+            // Only kick off the worker sync when a platform handle was actually
+            // added/changed. Saving just the name/description, or re-submitting
+            // unchanged handles, shouldn't trigger a resync.
             if (affectedPlatforms.length > 0) {
                 setIsInitializing(true);
 
                 const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
                 if (serverUrl) {
-                    // Fire-and-forget: kicks off background stat syncing on the
-                    // worker service for the platforms whose handle changed.
-                    // This must never block navigation, since the worker may be
-                    // slow, unreachable, or not deployed.
-                    axios
-                        .post(
+                    // The worker verifies each handle actually exists (fast — a
+                    // single request per platform) and responds immediately.
+                    // The slow part — importing full submission history — keeps
+                    // running on the worker in the background, well after this
+                    // request returns, so it's safe to await here.
+                    type FreshInitResponse = { success: boolean; verified?: string[]; invalid?: InvalidHandle[] };
+
+                    try {
+                        const { data } = await axios.post<FreshInitResponse>(
                             `${serverUrl}/refresh/fresh-init`,
                             { user_id: userId },
-                            { timeout: 5000 }
-                        )
-                        .catch((err) => {
-                            console.error("fresh-init request failed:", err);
+                            { timeout: 15000 }
+                        );
+
+                        setSyncResult({
+                            verified: data.verified ?? affectedPlatforms,
+                            invalid: data.invalid ?? [],
                         });
+                    } catch (err) {
+                        console.error("fresh-init request failed:", err);
+
+                        // The worker responded (e.g. 422 — every handle failed
+                        // verification): use its payload instead of treating
+                        // this as unreachable.
+                        if (axios.isAxiosError(err) && err.response?.data) {
+                            const data = err.response.data as FreshInitResponse;
+                            setSyncResult({
+                                verified: data.verified ?? [],
+                                invalid: data.invalid ?? affectedPlatforms.map((platform) => ({ platform })),
+                            });
+                        } else {
+                            // Genuinely unreachable/timed out — don't block the
+                            // user on it, just let them know syncing will
+                            // continue (or be retried) in the background.
+                            setSyncResult({ verified: affectedPlatforms, invalid: [], unreachable: true });
+                        }
+                    }
+                } else {
+                    setSyncResult({ verified: affectedPlatforms, invalid: [] });
                 }
+
+                setIsInitializing(false);
+                return;
             }
 
             router.push("/dashboard");
@@ -302,6 +377,11 @@ export default function OnboardingForm({
         } finally {
             setIsSubmitting(false);
         }
+    }
+
+    function dismissSyncModal() {
+        setSyncResult(null);
+        router.push("/dashboard");
     }
 
     const loadingOverlay =
@@ -316,8 +396,111 @@ export default function OnboardingForm({
                               {LOADING_MESSAGES[loadingMessageIndex]}
                           </p>
                           <p className="onboarding-loading-copy">
-                              Hang tight while we pull in your stats and set up your dashboard.
+                              Hang tight while we verify your handles.
                           </p>
+                      </div>
+                  </div>,
+                  document.body
+              )
+            : null;
+
+    const hasVerifiedHandle = (syncResult?.verified.length ?? 0) > 0;
+
+    const syncModal =
+        isMounted && syncResult
+            ? createPortal(
+                  <div className="auth-modal-overlay" role="presentation">
+                      <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="sync-modal-title">
+                          <div className={`auth-modal-icon ${hasVerifiedHandle ? "auth-modal-icon--pending" : "auth-modal-icon--warning"}`} aria-hidden>
+                              <span className="material-symbols-outlined">
+                                  {hasVerifiedHandle ? "cloud_sync" : "error"}
+                              </span>
+                          </div>
+                          <h2 id="sync-modal-title" className={`${headingFont.className} auth-modal-title`}>
+                              {hasVerifiedHandle ? "Handles saved — syncing your data" : "We couldn't verify your handle"}
+                          </h2>
+                          <p className="auth-modal-copy">
+                              {syncResult.unreachable
+                                  ? "We couldn't reach the sync service right now, but your handles are saved. We'll pick up the import automatically."
+                                  : hasVerifiedHandle
+                                    ? `We verified ${syncResult.verified.join(", ")} and are importing your history in the background. This can take a few minutes to fully show up on your dashboard.`
+                                    : "None of the handles you entered could be found on their platform. Double-check the spelling from Settings and save again."}
+                          </p>
+                          {syncResult.invalid.length > 0 && (
+                              <ul className="auth-modal-list">
+                                  {syncResult.invalid.map((entry) => (
+                                      <li key={entry.platform}>
+                                          <strong>{entry.platform}</strong>: {entry.error ?? "handle not found"}
+                                      </li>
+                                  ))}
+                              </ul>
+                          )}
+                          <div className="auth-modal-actions">
+                              <button type="button" className="auth-modal-button" onClick={dismissSyncModal}>
+                                  Continue to dashboard
+                              </button>
+                          </div>
+                      </div>
+                  </div>,
+                  document.body
+              )
+            : null;
+
+    const deleteAccountModal =
+        isMounted && showDeleteConfirm
+            ? createPortal(
+                  <div className="auth-modal-overlay" role="presentation" onClick={() => !isDeletingAccount && setShowDeleteConfirm(false)}>
+                      <div
+                          className="auth-modal"
+                          role="dialog"
+                          aria-modal="true"
+                          aria-labelledby="delete-account-modal-title"
+                          onClick={(e) => e.stopPropagation()}
+                      >
+                          <div className="auth-modal-icon auth-modal-icon--warning" aria-hidden>
+                              <span className="material-symbols-outlined">warning</span>
+                          </div>
+                          <h2 id="delete-account-modal-title" className={`${headingFont.className} auth-modal-title`}>
+                              Delete your account?
+                          </h2>
+                          <p className="auth-modal-copy">
+                              This permanently deletes your account and every piece of data tied to it — solved
+                              problems, streaks, contest history, platform handles, mentorships, notes, and your
+                              profile photo. This cannot be undone.
+                          </p>
+                          {deleteError && (
+                              <p className="onboarding-avatar-error" style={{ justifyContent: "center", marginTop: "0.85rem" }}>
+                                  <span className="material-symbols-outlined" aria-hidden="true">
+                                      error
+                                  </span>
+                                  {deleteError}
+                              </p>
+                          )}
+                          <div className="auth-modal-actions auth-modal-actions-row">
+                              <button
+                                  type="button"
+                                  className="auth-modal-button auth-modal-button--ghost"
+                                  onClick={() => setShowDeleteConfirm(false)}
+                                  disabled={isDeletingAccount}
+                              >
+                                  Cancel
+                              </button>
+                              <button
+                                  type="button"
+                                  className="auth-modal-button auth-modal-button--danger"
+                                  onClick={handleDeleteAccount}
+                                  disabled={isDeletingAccount}
+                              >
+                                  {isDeletingAccount ? (
+                                      <>
+                                          <span className="onboarding-spinner" aria-hidden="true" />
+                                          <span>Deleting…</span>
+                                      </>
+                                  ) : (
+                                      "Delete permanently"
+                                  )}
+                              </button>
+                          </div>
                       </div>
                   </div>,
                   document.body
@@ -327,6 +510,8 @@ export default function OnboardingForm({
     return (
         <main className={`auth-shell onboarding-shell ${bodyFont.className}`}>
             {loadingOverlay}
+            {syncModal}
+            {deleteAccountModal}
             <div className="auth-grid" />
             <div className="auth-spot auth-spot-left" />
             <div className="auth-spot auth-spot-right" />
@@ -529,6 +714,28 @@ export default function OnboardingForm({
                         <div className="onboarding-footer">
                             <p className="onboarding-status">{status}</p>
                         </div>
+
+                        {isEditing && (
+                            <div className="onboarding-danger-zone">
+                                <div>
+                                    <p className="onboarding-danger-title">Delete account</p>
+                                    <p className="onboarding-danger-copy">
+                                        This will permanently delete your account and all your data — solved
+                                        problems, streaks, contests, mentorships, and notes. This cannot be undone.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="onboarding-danger-button"
+                                    onClick={() => {
+                                        setDeleteError(null);
+                                        setShowDeleteConfirm(true);
+                                    }}
+                                >
+                                    Delete my account
+                                </button>
+                            </div>
+                        )}
                     </article>
                 </div>
             </section>

@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/app/lib/supabase/server-client";
 import { isActiveMentorship, requireUser } from "@/app/lib/mentorship/access";
 import { getDashboardData } from "@/app/actions/analytics.actions";
+import { getUpcomingContests, getRecentContestsWithAttendance } from "@/app/actions/contest.actions";
 import { getAssignmentsForMentee, getAssignmentInsights } from "@/app/actions/assignment.actions";
 import { getNotesForMentee } from "@/app/actions/note.actions";
-import type { DashboardData } from "@/app/lib/types/analytics";
+import type { DashboardData, UpcomingContest, RecentContestsResult } from "@/app/lib/types/analytics";
 import type { AssignmentInsights } from "@/app/lib/types/mentorship";
 
 import ProfileCard from "../../components/ProfileCard";
@@ -16,6 +17,8 @@ import StatsOverview from "../../components/StatsOverview";
 import ContestRatingGraph from "../../components/ContestRatingGraph";
 import TopicDonut from "../../components/TopicDonut";
 import TopicProgressBars from "../../components/TopicProgressBars";
+import UpcomingContests from "../../components/UpcomingContests";
+import RecentContests from "../../components/RecentContests";
 import AssignmentPanel from "./AssignmentPanel";
 import NotesPanel from "./NotesPanel";
 import AssignmentInsightsCard from "./AssignmentInsightsCard";
@@ -49,8 +52,10 @@ export default async function MenteeDetailPage({ params }: { params: Promise<{ m
     // Fetch analytics + mentor-only extras in parallel. Insights are fetched
     // (and rendered) only when a mentor is viewing someone else — a mentee
     // must never see this rollup about themselves.
-    const [data, assignments, notes, insights] = await Promise.all([
+    const [data, upcomingContests, recentContests, assignments, notes, insights] = await Promise.all([
         getDashboardData(menteeId) as Promise<DashboardData>,
+        getUpcomingContests() as Promise<UpcomingContest[]>,
+        getRecentContestsWithAttendance(menteeId) as Promise<RecentContestsResult>,
         getAssignmentsForMentee(menteeId),
         getNotesForMentee(menteeId),
         isMentorViewingOther ? getAssignmentInsights(menteeId) : Promise.resolve<AssignmentInsights | null>(null),
@@ -73,7 +78,11 @@ export default async function MenteeDetailPage({ params }: { params: Promise<{ m
                     <ProfileCard profile={data.profile} streak={data.streak} userId={menteeId} />
                 </div>
                 <div>
-                    <StreakStatsCard streak={data.streak} />
+                    <StreakStatsCard
+                        streak={data.streak}
+                        contestsAttended={recentContests.attendedCount}
+                        contestsTotal={recentContests.total}
+                    />
                 </div>
             </div>
 
@@ -93,6 +102,16 @@ export default async function MenteeDetailPage({ params }: { params: Promise<{ m
                 <div className="lg:col-span-6">
                     <TopicProgressBars data={data.topics.last7Days} />
                 </div>
+            </div>
+
+            {/* Contests: Recent (attendance) + Upcoming — 50/50 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <RecentContests
+                    contests={recentContests.contests}
+                    attendedCount={recentContests.attendedCount}
+                    total={recentContests.total}
+                />
+                <UpcomingContests contests={upcomingContests} />
             </div>
 
             {/* Mentor-only tools, at the bottom: assign + notes share one 50/50 row. */}

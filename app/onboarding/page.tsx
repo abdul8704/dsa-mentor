@@ -47,6 +47,7 @@ export default async function Page({
                 description: profile?.description ?? "",
                 avatarUrl: profile?.avatar_url ?? "",
             }}
+            isEditing={isEditing}
         />
     );
 }

@@ -2,7 +2,8 @@ import { createSupabaseServerClient } from "../lib/supabase/server-client";
 import { isOnboardingCompleted } from "../lib/auth/onboarding";
 import { redirect } from "next/navigation";
 import { getDashboardData } from "../actions/analytics.actions";
-import type { DashboardData } from "../lib/types/analytics";
+import { getUpcomingContests, getRecentContestsWithAttendance } from "../actions/contest.actions";
+import type { DashboardData, UpcomingContest, RecentContestsResult } from "../lib/types/analytics";
 
 import ProfileCard from "./components/ProfileCard";
 import StreakStatsCard from "./components/StreakStatsCard";
@@ -12,6 +13,8 @@ import StatsOverview from "./components/StatsOverview";
 import ContestRatingGraph from "./components/ContestRatingGraph";
 import TopicDonut from "./components/TopicDonut";
 import TopicProgressBars from "./components/TopicProgressBars";
+import UpcomingContests from "./components/UpcomingContests";
+import RecentContests from "./components/RecentContests";
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
@@ -28,8 +31,14 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
-  // Fetch all dashboard data in a single parallel call
-  const data: DashboardData = await getDashboardData(user.id);
+  // Fetch dashboard data and the (public, platform-wide) upcoming contest
+  // schedule in parallel — the latter doesn't depend on the user's data.
+  const [data, upcomingContests, recentContests]: [DashboardData, UpcomingContest[], RecentContestsResult] =
+    await Promise.all([
+      getDashboardData(user.id),
+      getUpcomingContests(),
+      getRecentContestsWithAttendance(user.id),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -42,7 +51,11 @@ export default async function DashboardPage() {
 
         {/* Stats 2×2 Grid — 50% */}
         <div>
-          <StreakStatsCard streak={data.streak} />
+          <StreakStatsCard
+            streak={data.streak}
+            contestsAttended={recentContests.attendedCount}
+            contestsTotal={recentContests.total}
+          />
         </div>
       </div>
 
@@ -66,6 +79,16 @@ export default async function DashboardPage() {
         <div className="lg:col-span-6">
           <TopicProgressBars data={data.topics.last7Days} />
         </div>
+      </div>
+
+      {/* Contests: Recent (attendance) + Upcoming — 50/50 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RecentContests
+          contests={recentContests.contests}
+          attendedCount={recentContests.attendedCount}
+          total={recentContests.total}
+        />
+        <UpcomingContests contests={upcomingContests} />
       </div>
     </div>
   );

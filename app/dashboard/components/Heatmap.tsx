@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { HeatmapDay } from "@/app/lib/types/analytics";
 
 interface HeatmapProps {
@@ -120,17 +120,41 @@ function buildMonthGrid(days: HeatmapDay[]): MonthGroup[] {
 export default function Heatmap({ data }: HeatmapProps) {
   const heatmapData = useMemo(() => data ?? generateDefaultHeatmap(), [data]);
   const monthGroups = useMemo(() => buildMonthGrid(heatmapData), [heatmapData]);
+  const [showInfo, setShowInfo] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
 
   return (
     <section className="glass-card rounded-xl p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <h3
-          className="text-[24px] lg:text-[32px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#e5e1e4]"
-          style={{ fontFamily: "var(--font-geist-sans)" }}
-        >
-          Consistency
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3
+            className="text-[24px] lg:text-[32px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#e5e1e4]"
+            style={{ fontFamily: "var(--font-geist-sans)" }}
+          >
+            Heatmap
+          </h3>
+          <div className="relative" ref={infoRef}>
+            <button
+              type="button"
+              aria-label="Heatmap accuracy info"
+              onClick={() => setShowInfo((v) => !v)}
+              onBlur={() => setShowInfo(false)}
+              className="flex items-center justify-center w-5 h-5 rounded-full border border-white/20 text-[11px] text-[#dfc0b6] hover:bg-white/10 hover:text-[#e5e1e4] transition-colors cursor-pointer"
+              style={{ fontFamily: "var(--font-geist-mono)" }}
+            >
+              i
+            </button>
+            {showInfo && (
+              <div
+                className="absolute left-0 top-7 z-20 w-64 rounded-lg border border-white/10 bg-[#1a1416] p-3 text-[11px] leading-relaxed text-[#dfc0b6] shadow-xl"
+                style={{ fontFamily: "var(--font-geist-mono)" }}
+              >
+                LeetCode doesn&apos;t expose complete submission history through its public data, so we can&apos;t always retrieve every solved problem. As a result, this heatmap may not perfectly match the one on your LeetCode profile.
+              </div>
+            )}
+          </div>
+        </div>
         <div
           className="flex gap-2 text-[10px] text-[#dfc0b6] items-center"
           style={{ fontFamily: "var(--font-geist-mono)" }}

@@ -93,8 +93,12 @@ export async function getStreakData(userId: string): Promise<StreakData> {
   const supabase = await createSupabaseServerClient();
 
   const today: string = todayISO();
+  // The "last 7 days" window is the 7 calendar days ending today (inclusive),
+  // i.e. 6 days ago → today. Using `daysAgoISO(6)` keeps the count and the
+  // per-day chart aligned on exactly those 7 days.
+  const sixDaysAgo: string = daysAgoISO(6);
   const sevenDaysAgo: string = daysAgoISO(7);
-  const fourteenDaysAgo: string = daysAgoISO(14);
+  const thirteenDaysAgo: string = daysAgoISO(13);
   const thirtyDaysAgo: string = daysAgoISO(30);
   const sixtyDaysAgo: string = daysAgoISO(60);
 
@@ -123,20 +127,20 @@ export async function getStreakData(userId: string): Promise<StreakData> {
       .eq("user_id", userId)
       .eq("solved_date", today),
 
-    // 3. Last 7 days count
+    // 3. Last 7 days count (6 days ago → today, inclusive)
     supabase
       .from("solved_problems")
       .select("problem_id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .gte("solved_date", sevenDaysAgo),
+      .gte("solved_date", sixDaysAgo),
 
-    // 4. Previous 7 days count (days 8–14 ago)
+    // 4. Previous 7 days count (13 → 7 days ago)
     supabase
       .from("solved_problems")
       .select("problem_id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .gte("solved_date", fourteenDaysAgo)
-      .lt("solved_date", sevenDaysAgo),
+      .gte("solved_date", thirteenDaysAgo)
+      .lt("solved_date", sixDaysAgo),
 
     // 5. Last 30 days count
     supabase
@@ -153,12 +157,12 @@ export async function getStreakData(userId: string): Promise<StreakData> {
       .gte("solved_date", sixtyDaysAgo)
       .lt("solved_date", thirtyDaysAgo),
 
-    // 7. Per-day breakdown for the last 7 days
+    // 7. Per-day breakdown for the last 7 days (6 days ago → today)
     supabase
       .from("solved_problems")
       .select("solved_date")
       .eq("user_id", userId)
-      .gte("solved_date", sevenDaysAgo),
+      .gte("solved_date", sixDaysAgo),
 
     // 8. Contests attended this week
     supabase

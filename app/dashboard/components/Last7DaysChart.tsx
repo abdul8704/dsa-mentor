@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+// Single-letter initials indexed by JS getDay() (0 = Sunday … 6 = Saturday).
+const WEEKDAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"];
 const GRID_FRACTIONS = [0.25, 0.5, 0.75] as const;
 
 /**
@@ -12,6 +13,21 @@ const GRID_FRACTIONS = [0.25, 0.5, 0.75] as const;
  */
 export default function Last7DaysChart({ breakdown }: { breakdown: number[] }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  // The breakdown maps index 0 → (breakdown.length - 1) days ago and the last
+  // index → today, so each bar's weekday label must be derived from the real
+  // calendar rather than a fixed Mon–Sun list. Compute after mount to keep
+  // the label consistent with the viewer's local date (and avoid a
+  // server/client hydration mismatch near midnight/timezone boundaries).
+  const [dayLabels, setDayLabels] = useState<string[]>(() => Array(breakdown.length).fill(""));
+  useEffect(() => {
+    const labels = breakdown.map((_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (breakdown.length - 1 - index));
+      return WEEKDAY_INITIALS[date.getDay()];
+    });
+    setDayLabels(labels);
+  }, [breakdown.length]);
 
   const maxVal = Math.max(...breakdown, 1);
   const padY = 6;
@@ -142,7 +158,7 @@ export default function Last7DaysChart({ breakdown }: { breakdown: number[] }) {
           fontSize="5"
           fontFamily="var(--font-geist-mono)"
         >
-          {DAY_LABELS[index]}
+          {dayLabels[index]}
         </text>
       ))}
     </svg>

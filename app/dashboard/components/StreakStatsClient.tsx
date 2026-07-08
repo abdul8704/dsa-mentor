@@ -5,6 +5,10 @@ import Last7DaysChart from "./Last7DaysChart";
 
 interface StreakStatsClientProps {
   streak?: StreakData | null;
+  /** Contests attended in the last 7 days (matched against the real schedule). */
+  contestsAttended?: number;
+  /** Total contests held across all platforms in the last 7 days. */
+  contestsTotal?: number;
 }
 
 const DEFAULT_STREAK: StreakData = {
@@ -86,10 +90,13 @@ function MiniCard({ icon, label, value, sub, accent }: MiniCardProps) {
   );
 }
 
-export default function StreakStatsClient({ streak }: StreakStatsClientProps) {
+export default function StreakStatsClient({ streak, contestsAttended, contestsTotal: contestsTotalProp }: StreakStatsClientProps) {
   const s = streak ?? DEFAULT_STREAK;
   const changeUp = s.last7DaysChange >= 0;
-  const contestsTotal = 7;
+  // Prefer the real schedule-matched tally; fall back to the DB streak count
+  // (and a sensible weekly target) when it isn't provided.
+  const contestsAttendedCount = contestsAttended ?? s.contestsThisWeek;
+  const contestsTotal = contestsTotalProp ?? 7;
 
   return (
     <div className="grid grid-cols-5 gap-3 h-full">
@@ -227,7 +234,7 @@ export default function StreakStatsClient({ streak }: StreakStatsClientProps) {
                 className="text-xl font-bold leading-none tracking-tight text-[#c8acff]"
                 style={{ fontFamily: "var(--font-geist-sans)" }}
               >
-                {s.contestsThisWeek}
+                {contestsAttendedCount}
               </span>
               <span
                 className="text-xs text-[#a78b82] font-medium"

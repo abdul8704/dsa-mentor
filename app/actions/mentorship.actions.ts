@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/app/lib/supabase/server-client";
 import { getServiceRoleClient } from "@/app/lib/supabase/service-client";
 import { sendEmail, buildInviteEmail } from "@/app/lib/email/mailer";
 import { requireUser, isActiveMentorship } from "@/app/lib/mentorship/access";
+import { getRecentContestAttendanceForUsers } from "@/app/actions/contest.actions";
 import type {
     UserSearchResult,
     MenteeSummary,
@@ -15,10 +16,6 @@ import type {
 
 // A mentee is flagged inactive after more than this many days without a solve.
 const INACTIVE_THRESHOLD_DAYS = 7;
-
-// Denominator shown alongside "contests attended this week" — mirrors the
-// weekly target already used on the personal dashboard (StreakStatsClient).
-const CONTESTS_TOTAL_PER_WEEK = 7;
 
 /** YYYY-MM-DD for `daysAgo` days before today (UTC). */
 function isoDaysAgo(daysAgo: number): string {
@@ -357,13 +354,22 @@ export async function getMyMentees(): Promise<MenteeSummary[]> {
         if (error || !mentorships?.length) return [];
 
         const menteeIds = mentorships.map((m) => m.mentee_id);
+        // "Last 7 days" = the 7 calendar days ending today (6 days ago → today),
+        // so the count matches the 7-bar chart breakdown.
+        const sixDaysAgo = isoDaysAgo(6);
         const sevenDaysAgo = isoDaysAgo(7);
         const now = new Date();
+
+        // Real last-7-days contest attendance across all platforms, resolved
+        // once for the whole roster (shared schedule + one attendance query)
+        // so each row shows attended/total against the actual contests held —
+        // matching the personal dashboard rather than a stale hardcoded /7.
+        const contestAttendance = await getRecentContestAttendanceForUsers(menteeIds);
 
         // Build a summary per mentee. Queries are per-mentee but run in parallel.
         const summaries = await Promise.all(
             menteeIds.map(async (menteeId): Promise<MenteeSummary> => {
-                const [profileRes, streakRes, weekRes, lastRes, assignmentsRes, contestRes, tagsRes, totalSolvedRes, solvedTodayRes] =
+                const [profileRes, streakRes, weekRes, lastRes, assignmentsRes, tagsRes, totalSolvedRes, solvedTodayRes] =
                     await Promise.all([
                         supabase.from("profile").select("name").eq("user_id", menteeId).maybeSingle(),
                         supabase.from("user-streak").select("curr_streak, longest_streak").eq("user_id", menteeId).maybeSingle(),
@@ -372,7 +378,7 @@ export async function getMyMentees(): Promise<MenteeSummary[]> {
                             .from("solved_problems")
                             .select("solved_date")
                             .eq("user_id", menteeId)
-                            .gte("solved_date", sevenDaysAgo),
+                            .gte("solved_date", sixDaysAgo),
                         supabase
                             .from("solved_problems")
                             .select("solved_date")
@@ -381,11 +387,6 @@ export async function getMyMentees(): Promise<MenteeSummary[]> {
                             .limit(1)
                             .maybeSingle(),
                         supabase.from("assignments").select("status").eq("mentee_id", menteeId).eq("mentor_id", me.id),
-                        supabase
-                            .from("user_contest")
-                            .select("contest_id", { count: "exact", head: true })
-                            .eq("user_id", menteeId)
-                            .gte("date", sevenDaysAgo),
                         supabase
                             .from("solved_problems")
                             .select("problems(tags)")
@@ -442,8 +443,8 @@ export async function getMyMentees(): Promise<MenteeSummary[]> {
                     solvedToday: solvedTodayRes.count ?? 0,
                     last7DaysSolved,
                     last7DaysBreakdown,
-                    contestsThisWeek: contestRes.count ?? 0,
-                    contestsTotal: CONTESTS_TOTAL_PER_WEEK,
+                    contestsThisWeek: contestAttendance.attendedByUser[menteeId] ?? 0,
+                    contestsTotal: contestAttendance.total,
                     topTags,
                     lastActiveDate,
                     daysSinceActive,

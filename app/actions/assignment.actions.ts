@@ -1,58 +1,52 @@
 "use server";
 
-import axios from "axios";
 import { createSupabaseServerClient } from "@/app/lib/supabase/server-client";
+import { getServiceRoleClient } from "@/app/lib/supabase/service-client";
 import { requireUser, assertMentorOf, isActiveMentorship } from "@/app/lib/mentorship/access";
+import { fetchProblemMeta, type ProblemEntry } from "@/app/lib/problemMeta/resolve";
 import type { AssignmentView, TaskView, ActionResult, AssignmentInsights } from "@/app/lib/types/mentorship";
 
-/** Shape returned by the worker's GET /problem-meta endpoint. */
-interface ProblemMetaResponse {
-    success: boolean;
-    problem: {
-        problem_id: string;
-        platform: string;
-        title: string;
-        difficulty: string | null;
-        rating: number | null;
-        tags: string[] | null;
-    };
-}
-
 /**
- * Resolves problem metadata for a URL via the worker's /problem-meta endpoint.
+ * Resolves problem metadata for a pasted URL (LeetCode, Codeforces or
+ * AtCoder), then upserts it into the shared `problems` catalog table so
+ * assignments can FK to it and analytics can join tags/difficulty.
+ *
+ * Uses the service-role client for the upsert (like the old worker did) since
+ * the `problems` table is a shared catalog, not scoped to the current user.
+ *
  * Shared by single-mentee and group assignment flows so the URL is only
  * resolved once even when fanning out to many mentees.
  */
 export async function resolveProblemMeta(
     url: string
-): Promise<{ ok: true; meta: ProblemMetaResponse["problem"] } | { ok: false; message: string }> {
-    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-    if (!serverUrl) {
-        console.error("[assignment] NEXT_PUBLIC_SERVER_URL is not configured");
-        return { ok: false, message: "Problem service is not configured. Contact support." };
-    }
-
+): Promise<{ ok: true; meta: ProblemEntry } | { ok: false; message: string }> {
     try {
         console.log(`[assignment] Resolving problem meta for url=${url}`);
-        const res = await axios.get<ProblemMetaResponse>(`${serverUrl}/problem-meta`, {
-            params: { url },
-            timeout: 30_000,
-        });
-        return { ok: true, meta: res.data.problem };
+        const problem = await fetchProblemMeta(url);
+
+        // Upsert into the shared catalog (ignoreDuplicates keeps existing rows).
+        const { error } = await getServiceRoleClient()
+            .from("problems")
+            .upsert([problem], { onConflict: "problem_id", ignoreDuplicates: true });
+
+        if (error) {
+            console.error(`[assignment] Failed to upsert problem ${problem.problem_id}: ${error.message}`);
+            return { ok: false, message: "Could not save the problem. Please try again." };
+        }
+
+        console.log(`[assignment] Resolved ${problem.problem_id} (${problem.title})`);
+        return { ok: true, meta: problem };
     } catch (err: unknown) {
-        // The worker returns 422 with a user-facing message for bad URLs.
-        const apiMessage =
-            axios.isAxiosError(err) && err.response?.data?.error
-                ? String(err.response.data.error)
-                : "Could not resolve that problem. Check the URL and try again.";
-        console.error(`[assignment] problem-meta failed for ${url}: ${apiMessage}`);
-        return { ok: false, message: apiMessage };
+        // fetchProblemMeta throws user-facing messages for bad/unresolvable URLs.
+        const message = err instanceof Error ? err.message : "Could not resolve that problem. Check the URL and try again.";
+        console.error(`[assignment] problem-meta failed for ${url}: ${message}`);
+        return { ok: false, message };
     }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // assignProblem — mentor assigns a problem (by URL) to a mentee.
-// Resolves + persists problem metadata via the worker, then inserts the row.
+// Resolves + persists problem metadata, then inserts the assignment row.
 // ──────────────────────────────────────────────────────────────────────────
 export async function assignProblem(params: {
     menteeId: string;

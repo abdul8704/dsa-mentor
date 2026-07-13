@@ -434,13 +434,22 @@ export async function getMyMentees(): Promise<MenteeSummary[]> {
                     .slice(0, 3)
                     .map(([tag]) => tag);
 
+                // `curr_streak`/`longest_streak` are confirmed only through
+                // *yesterday* (see dsa-mentor-worker/jobs/streak.ts) — add
+                // today's already-fetched live solved count on top, same as
+                // the personal dashboard's getStreakData.
+                const solvedToday = solvedTodayRes.count ?? 0;
+                const confirmedStreak = streakRes.data?.curr_streak ?? 0;
+                const currentStreak = solvedToday > 0 ? confirmedStreak + 1 : confirmedStreak;
+                const longestStreak = Math.max(streakRes.data?.longest_streak ?? 0, currentStreak);
+
                 return {
                     userId: menteeId,
                     name: profileRes.data?.name?.trim() || "Unnamed mentee",
-                    currentStreak: streakRes.data?.curr_streak ?? 0,
-                    longestStreak: streakRes.data?.longest_streak ?? 0,
+                    currentStreak,
+                    longestStreak,
                     totalSolved: totalSolvedRes.count ?? 0,
-                    solvedToday: solvedTodayRes.count ?? 0,
+                    solvedToday,
                     last7DaysSolved,
                     last7DaysBreakdown,
                     contestsThisWeek: contestAttendance.attendedByUser[menteeId] ?? 0,

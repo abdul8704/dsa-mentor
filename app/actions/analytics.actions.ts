@@ -173,9 +173,16 @@ export async function getStreakData(userId: string): Promise<StreakData> {
   ]);
 
   // ── Extract values with safe defaults ──
-  const currentStreak: number = streakResult.data?.curr_streak ?? 0;
-  const longestStreak: number = streakResult.data?.longest_streak ?? 0;
   const solvedToday: number = solvedTodayResult.count ?? 0;
+  // `curr_streak`/`longest_streak` in `user-streak` are confirmed only
+  // through *yesterday* (see dsa-mentor-worker/jobs/streak.ts) — today's
+  // count can still change throughout the day, so instead of relying on a
+  // daily_count snapshot that may be hours stale, we add today's live solved
+  // count (already fetched above) on top of the confirmed streak here.
+  const confirmedStreak: number = streakResult.data?.curr_streak ?? 0;
+  const confirmedLongestStreak: number = streakResult.data?.longest_streak ?? 0;
+  const currentStreak: number = solvedToday > 0 ? confirmedStreak + 1 : confirmedStreak;
+  const longestStreak: number = Math.max(confirmedLongestStreak, currentStreak);
   const last7DaysSolved: number = last7Result.count ?? 0;
   const prev7DaysSolved: number = prev7Result.count ?? 0;
   const solvedThisMonth: number = last30Result.count ?? 0;

@@ -3,7 +3,7 @@
 ## 1. System Overview
 
 * **High-Level Purpose:** AlgoMentor is a competitive programming and Data Structures & Algorithms (DSA) tracking and mentorship platform. It consolidates solved problem counts, daily activity heatmaps, contest rating graphs, and topic gap analysis across multiple competitive programming judges (LeetCode, Codeforces, and AtCoder) into a unified dashboard. Additionally, it offers a mentorship environment allowing mentors to manage mentee rosters, organize mentees into groups, batch-assign tasks with automated verification, and issue notes.
-* **Core Design Pattern:** Full-Stack Layered Architecture built on the Next.js 16 App Router with React 19. The application leverages Server Components for data fetching, Server Actions for mutations and analytics aggregation, API Route Handlers for OAuth callbacks and account management, Middleware (`proxy.ts`) for route protection and onboarding enforcement, and Supabase for PostgreSQL storage and authentication.
+* **Core Design Pattern:** Full-Stack Layered Architecture built on the Next.js 16 App Router with React 19. The application leverages Server Components for data fetching, Server Actions for mutations and analytics aggregation, API Route Handlers for OAuth callbacks and account management, Middleware (`proxy.ts`) for route protection and onboarding enforcement, Redis (`ioredis`) for server-side response caching, and Supabase for PostgreSQL storage and authentication.
 
 ---
 
@@ -16,6 +16,7 @@
 | **Language** | TypeScript 5 | Static typing across server actions, DB interfaces, and client components |
 | **Styling & Fonts** | Tailwind CSS v4 / PostCSS | Utility-first CSS framework and custom font variable injection |
 | **Backend / Database** | Supabase (`@supabase/ssr`, `@supabase/supabase-js`) | PostgreSQL database, Row Level Security (RLS), and authentication provider |
+| **Caching / Data Store** | Redis (`ioredis`) | In-memory cache for storing public platform-wide contest schedules (`contests:upcoming`, `contests:past`) |
 | **Cloud Storage** | AWS S3 SDK (`@aws-sdk/client-s3`) | Object storage for user profile avatar uploads and management |
 | **Email Service** | Nodemailer | Transactional SMTP email client for sending mentorship invitation links |
 | **Scraping & HTTP** | Axios & Cheerio | External HTTP requests and HTML scraping for problem metadata resolution |
@@ -33,6 +34,7 @@ flowchart TD
     RH["Route Handlers (app/api/*)"]
     SupaAnon["Supabase SSR Client (RLS Enforcement)"]
     SupaAdmin["Supabase Service Role Client (Bypasses RLS)"]
+    Redis["Redis Cache (ioredis)"]
     S3["AWS S3 Bucket (Avatar Storage)"]
     SMTP["SMTP Mailer (Nodemailer)"]
     ExtAPI["External Services (LeetCode GraphQL, Codeforces API, AtCoder/Kenkoooo)"]
@@ -42,6 +44,7 @@ flowchart TD
     MW --> RH
     SA --> SupaAnon
     SA --> SupaAdmin
+    SA --> Redis
     SA --> S3
     SA --> SMTP
     SA --> ExtAPI
@@ -59,7 +62,7 @@ dsa-mentor/
 │   │   ├── analytics.actions.ts   # Solved counts, heatmaps, streak stats, contest rating history
 │   │   ├── assignment.actions.ts  # Problem metadata resolution & task assignments
 │   │   ├── avatar.actions.ts      # AWS S3 avatar uploads and removal
-│   │   ├── contest.actions.ts     # Live & past contest retrieval across platforms
+│   │   ├── contest.actions.ts     # Live & past contest retrieval across platforms (with Redis caching)
 │   │   ├── group.actions.ts       # Mentee group CRUD and batch assignments
 │   │   ├── mentorship.actions.ts  # User search, invitations, and mentee roster stats
 │   │   ├── note.actions.ts        # Direct mentor-to-mentee notes
@@ -77,6 +80,7 @@ dsa-mentor/
 │   │   ├── email/             # Nodemailer SMTP mailer and HTML email templates
 │   │   ├── mentorship/        # Authorization guards (e.g. assertMentorOf)
 │   │   ├── problemMeta/       # URL parsing, HTTP throttling, scraping, and metadata resolution
+│   │   ├── redis/             # Redis client and caching helpers (getCached, setCached)
 │   │   ├── supabase/          # SSR browser, server, and service-role client factories
 │   │   └── types/             # Domain TypeScript interfaces (analytics, mentorship)
 │   ├── onboarding/            # Profile onboarding and handle setup page
@@ -234,7 +238,7 @@ erDiagram
 | **Analytics** | `getPaginatedSolvedProblems(userId, page, pageSize, filters)` | Auth Session | Returns paginated solved problems filtered by platform, difficulty, topic, or date range |
 | **Assignments** | `assignProblem({ menteeId, url, dueDate, note })` | Active Mentor Guard | Resolves problem metadata from URL and inserts an assignment for a mentee |
 | **Assignments** | `getAssignmentInsights(menteeId)` | Active Mentor Guard | Provides verified assignment completion statistics against actual solve history |
-| **Contests** | `getUpcomingContests()` | Public / Non-Auth | Scrapes or fetches upcoming contest schedules from Codeforces, LeetCode, and AtCoder |
+| **Contests** | `getUpcomingContests()` | Public / Non-Auth | Scrapes or fetches upcoming contest schedules from Codeforces, LeetCode, and AtCoder with Redis caching |
 | **Mentorship** | `sendInvite({ userId, email })` | Auth Session | Generates a mentorship invitation link and sends an email via Nodemailer |
 | **Mentorship** | `respondToInvite(token, accept)` | Auth Session | Accepts or declines a mentorship invite, establishing a record in `mentorships` on accept |
 | **Groups** | `assignProblemToGroup({ groupId, url, ... })` | Auth Session | Resolves problem metadata once and fans out assignments to all members of a group |
@@ -277,6 +281,7 @@ sequenceDiagram
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL for browser and server clients |
 | `NEXT_PUBLIC_ANON_KEY` | Yes | Supabase public anonymous API key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service-role key used to bypass RLS for cross-user mentorship analytics and account deletion |
+| `REDIS_URL` | No | Redis connection URL for caching public contest schedules (defaults to `redis://localhost:6379`) |
 | `NEXT_PUBLIC_APP_URL` | No | Base application URL used to construct invite links (defaults to `http://localhost:3000`) |
 | `NEXT_PUBLIC_SERVER_URL` | No | External worker service URL for initiating background user syncs |
 | `AWS_REGION` | Yes | AWS region hosting the S3 bucket |

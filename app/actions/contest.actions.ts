@@ -2,6 +2,7 @@
 
 import type { UpcomingContest, RecentContest, RecentContestsResult } from "@/app/lib/types/analytics";
 import { createSupabaseServerClient } from "@/app/lib/supabase/server-client";
+import { getCached, setCached } from "@/app/lib/redis/client";
 
 // ─── Raw platform response shapes (trimmed to the fields we use) ───────────
 
@@ -29,6 +30,8 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 // Cache the (public, platform-wide) contest schedules for a while — they
 // change rarely and there's no per-user data involved.
 const REVALIDATE_SECONDS = 1800;
+const REDIS_KEY_UPCOMING = "contests:upcoming";
+const REDIS_KEY_PAST = "contests:past";
 
 // ─── Codeforces ──────────────────────────────────────────────────────────
 
@@ -183,6 +186,12 @@ async function getUpcomingAtCoderContests(): Promise<UpcomingContest[]> {
  * it's fetched directly rather than through the worker service.
  */
 export async function getUpcomingContests(): Promise<UpcomingContest[]> {
+  const cached = await getCached<UpcomingContest[]>(REDIS_KEY_UPCOMING);
+  if (cached) {
+    console.log("[contests] Redis cache hit for upcoming contests");
+    return cached;
+  }
+
   const [codeforces, leetcode, atcoder] = await Promise.all([
     getUpcomingCodeforcesContests(),
     getUpcomingLeetCodeContests(),
@@ -192,12 +201,18 @@ export async function getUpcomingContests(): Promise<UpcomingContest[]> {
   const now = Date.now();
   const cutoff = now + SEVEN_DAYS_MS;
 
-  return [...codeforces, ...leetcode, ...atcoder]
+  const result = [...codeforces, ...leetcode, ...atcoder]
     .filter((c) => {
       const startMs = new Date(c.startTime).getTime();
       return startMs >= now && startMs <= cutoff;
     })
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+  if (result.length > 0) {
+    await setCached(REDIS_KEY_UPCOMING, result, REVALIDATE_SECONDS);
+  }
+
+  return result;
 }
 
 // ─── Past contests (last 7 days) ────────────────────────────────────────────
@@ -333,6 +348,12 @@ async function getPastAtCoderContests(): Promise<PastContestBase[]> {
  * stored `user_contest` format so attendance can be resolved.
  */
 async function getPastContests(): Promise<PastContestBase[]> {
+  const cached = await getCached<PastContestBase[]>(REDIS_KEY_PAST);
+  if (cached) {
+    console.log("[contests] Redis cache hit for past contests");
+    return cached;
+  }
+
   const [codeforces, leetcode, atcoder] = await Promise.all([
     getPastCodeforcesContests(),
     getPastLeetCodeContests(),
@@ -342,12 +363,18 @@ async function getPastContests(): Promise<PastContestBase[]> {
   const now = Date.now();
   const cutoff = now - SEVEN_DAYS_MS;
 
-  return [...codeforces, ...leetcode, ...atcoder]
+  const result = [...codeforces, ...leetcode, ...atcoder]
     .filter((c) => {
       const startMs = new Date(c.startTime).getTime();
       return startMs <= now && startMs >= cutoff;
     })
     .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+
+  if (result.length > 0) {
+    await setCached(REDIS_KEY_PAST, result, REVALIDATE_SECONDS);
+  }
+
+  return result;
 }
 
 /**

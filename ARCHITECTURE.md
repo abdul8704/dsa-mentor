@@ -1,290 +1,113 @@
-# System Architecture & Technical Documentation
+# System Architecture — AlgoMentor
 
-## 1. System Overview
+## 1. Overview & Architectural Patterns
 
-* **High-Level Purpose:** AlgoMentor is a competitive programming and Data Structures & Algorithms (DSA) tracking and mentorship platform. It consolidates solved problem counts, daily activity heatmaps, contest rating graphs, and topic gap analysis across multiple competitive programming judges (LeetCode, Codeforces, and AtCoder) into a unified dashboard. Additionally, it offers a mentorship environment allowing mentors to manage mentee rosters, organize mentees into groups, batch-assign tasks with automated verification, and issue notes.
-* **Core Design Pattern:** Full-Stack Layered Architecture built on the Next.js 16 App Router with React 19. The application leverages Server Components for data fetching, Server Actions for mutations and analytics aggregation, API Route Handlers for OAuth callbacks and account management, Middleware (`proxy.ts`) for route protection and onboarding enforcement, and Supabase for PostgreSQL storage and authentication.
+AlgoMentor is a competitive programming analytics and mentorship platform designed to aggregate problem-solving metrics, streaks, topic distributions, and contest performance across **LeetCode**, **Codeforces**, and **AtCoder**.
 
----
-
-## 2. Technology Stack & Dependencies
-
-| Category | Technology / Library | Purpose in this Project |
-| :--- | :--- | :--- |
-| **Framework** | Next.js 16 (App Router) | Full-stack React framework providing SSR, Server Components, and Server Actions |
-| **UI Library** | React 19 / React DOM 19 | Component-based UI rendering engine |
-| **Language** | TypeScript 5 | Static typing across server actions, DB interfaces, and client components |
-| **Styling & Fonts** | Tailwind CSS v4 / PostCSS | Utility-first CSS framework and custom font variable injection |
-| **Backend / Database** | Supabase (`@supabase/ssr`, `@supabase/supabase-js`) | PostgreSQL database, Row Level Security (RLS), and authentication provider |
-| **Cloud Storage** | AWS S3 SDK (`@aws-sdk/client-s3`) | Object storage for user profile avatar uploads and management |
-| **Email Service** | Nodemailer | Transactional SMTP email client for sending mentorship invitation links |
-| **Scraping & HTTP** | Axios & Cheerio | External HTTP requests and HTML scraping for problem metadata resolution |
-| **Iconography** | React Icons & Material Symbols | Platform brand icons (LeetCode, Codeforces, AtCoder) and Material UI symbols |
+### Core Tech Stack
+- **Framework**: Next.js 16 (App Router) & React 19
+- **Runtime & Mutations**: React Server Components (RSC) and Next.js Server Actions
+- **Database & Auth**: Supabase PostgreSQL with Row Level Security (RLS) & Supabase SSR Auth (`@supabase/ssr`)
+- **In-Memory Cache**: Redis via `ioredis` for public contest schedules and external metadata
+- **Object Storage**: AWS S3 (`@aws-sdk/client-s3`) for profile picture avatar storage
+- **Email Delivery**: Nodemailer SMTP client for mentorship invitations
+- **Scraping & Integration**: Cheerio, Axios, and custom HTTP client with rate-limiting queues and exponential backoff
 
 ---
 
-## 3. High-Level Architecture Diagram
+## 2. High-Level System Architecture & Component Boundaries
 
-```mermaid
-flowchart TD
-    Client["Client Browser (React 19 / Tailwind UI)"]
-    MW["Next.js Middleware (proxy.ts)"]
-    SA["Server Actions (app/actions/*)"]
-    RH["Route Handlers (app/api/*)"]
-    SupaAnon["Supabase SSR Client (RLS Enforcement)"]
-    SupaAdmin["Supabase Service Role Client (Bypasses RLS)"]
-    S3["AWS S3 Bucket (Avatar Storage)"]
-    SMTP["SMTP Mailer (Nodemailer)"]
-    ExtAPI["External Services (LeetCode GraphQL, Codeforces API, AtCoder/Kenkoooo)"]
-
-    Client --> MW
-    MW --> SA
-    MW --> RH
-    SA --> SupaAnon
-    SA --> SupaAdmin
-    SA --> S3
-    SA --> SMTP
-    SA --> ExtAPI
-    RH --> SupaAdmin
+```
++-----------------------------------------------------------------------------------+
+|                                 Client Browser                                    |
++-----------------------------------------------------------------------------------+
+                                          |  (HTTP / Server Actions)
+                                          v
++-----------------------------------------------------------------------------------+
+|                               Next.js Server Runtime                              |
+|  +-----------------------+   +------------------------+   +--------------------+  |
+|  | Proxy / Middleware    |   | Server Components      |   | Server Actions     |  |
+|  | (Auth & Onboarding)   |   | (RSC Data Fetching)    |   | (Mutations)        |  |
+|  +-----------------------+   +------------------------+   +--------------------+  |
++-----------------------------------------------------------------------------------+
+            |                              |                             |
+            v                              v                             v
++-----------------------+      +-----------------------+     +----------------------+
+|   Supabase Postgres   |      |      Redis Cache      |     |  AWS S3 & SMTP       |
+| (RLS & Service Role)  |      |  (Contest Schedules)  |     | (Avatars & Invites)  |
++-----------------------+      +-----------------------+     +----------------------+
+            |                                                            |
+            +------------------------------+-----------------------------+
+                                           |
+                                           v
+                      +------------------------------------------+
+                      |       External Platform Services         |
+                      |  - LeetCode GraphQL                      |
+                      |  - Codeforces REST API / HTML Scraping   |
+                      |  - AtCoder HTML Scraping & Kenkoooo API  |
+                      +------------------------------------------+
 ```
 
 ---
 
-## 4. Directory & Module Structure
+## 3. Data Models & Persistence Boundaries
 
-```
-dsa-mentor/
-├── app/
-│   ├── actions/               # Server Actions for async backend processing
-│   │   ├── analytics.actions.ts   # Solved counts, heatmaps, streak stats, contest rating history
-│   │   ├── assignment.actions.ts  # Problem metadata resolution & task assignments
-│   │   ├── avatar.actions.ts      # AWS S3 avatar uploads and removal
-│   │   ├── contest.actions.ts     # Live & past contest retrieval across platforms
-│   │   ├── group.actions.ts       # Mentee group CRUD and batch assignments
-│   │   ├── mentorship.actions.ts  # User search, invitations, and mentee roster stats
-│   │   ├── note.actions.ts        # Direct mentor-to-mentee notes
-│   │   └── profile.actions.ts     # Platform handle mapping and onboarding updates
-│   ├── api/
-│   │   └── account/delete/        # Irreversible account wiping Route Handler
-│   ├── auth/                  # Authentication pages and OAuth callback handler
-│   ├── components/            # Shared marketing/landing page components
-│   ├── dashboard/             # Core application views (Overview, Mentees, Groups, Problems, Tasks)
-│   ├── invite/[token]/        # Public invite acceptance route
-│   ├── lib/                   # Internal utilities, services, and system helpers
-│   │   ├── account/           # Service-role account deletion procedures
-│   │   ├── auth/              # Onboarding completion check helpers
-│   │   ├── aws/               # AWS S3 client and object key utilities
-│   │   ├── email/             # Nodemailer SMTP mailer and HTML email templates
-│   │   ├── mentorship/        # Authorization guards (e.g. assertMentorOf)
-│   │   ├── problemMeta/       # URL parsing, HTTP throttling, scraping, and metadata resolution
-│   │   ├── supabase/          # SSR browser, server, and service-role client factories
-│   │   └── types/             # Domain TypeScript interfaces (analytics, mentorship)
-│   ├── onboarding/            # Profile onboarding and handle setup page
-│   └── globals.css            # Global CSS styles and Tailwind imports
-├── proxy.ts                   # Next.js middleware enforcing auth state and onboarding routing
-├── types/
-│   └── db.ts                  # Auto-generated Supabase PostgreSQL database schema types
-└── package.json               # Dependency definitions and script configurations
-```
+The application uses Supabase PostgreSQL as its primary transactional database. Tables are structured across three functional domains:
+
+### User & Platform Profiles
+- `profile`: Core user profile information (`user_id`, `name`, `description`, `avatar_url`, `onboarding_completed`, `last_refreshed`).
+- `user_platforms`: Platform handle associations per user (`user_id`, `platform`, `handle`, `last_synced_at`).
+- `user_platform_data`: Aggregated per-platform metrics (`solved_count`, `rating`, `max_rating`, `easy`, `medium`, `hard`).
+
+### Analytics & Activity Tracking
+- `user-streak`: Tracked daily solving streak metrics (`curr_streak`, `longest_streak`, `updated_on`).
+- `daily_count`: Daily solved problem aggregates for the heatmaps (`user_id`, `date`, `solved`).
+- `solved_problems`: Normalized log of solved problem records (`user_id`, `problem_id`, `platform`, `solved_at`, `solved_date`, `already_solved`).
+- `user_contest`: Contest participation and rating changes (`user_id`, `contest_id`, `platform`, `rating`, `rank`, `date`).
+- `problems`: Platform-wide shared catalog of problems (`problem_id`, `platform`, `title`, `difficulty`, `rating`, `tags`).
+
+### Mentorship & Operations
+- `mentorships`: Active mentor-mentee linkages (`mentor_id`, `mentee_id`, `status`).
+- `invites`: Tokenized mentorship invitations (`mentor_id`, `invitee_email`, `invitee_user_id`, `status`, `token`, `expires_at`).
+- `mentee_groups` & `mentee_group_members`: Mentor-only batch management abstractions.
+- `mentor_notes`: Direct communications sent from mentors to mentees.
+- `assignments`: Problem tasks assigned by mentors with due dates and verification tracking.
 
 ---
 
-## 5. Data Models & Database Schema
+## 4. API Surface & Routing
 
-```mermaid
-erDiagram
-    profile {
-        string user_id PK
-        string name
-        string description
-        string avatar_url
-        boolean onboarding_completed
-        string last_refreshed
-    }
-    user_platforms {
-        int id PK
-        string user_id FK
-        string platform
-        string handle
-        string last_synced_at
-    }
-    user_platform_data {
-        string id PK
-        string user_id FK
-        string platform
-        int solved_count
-        int rating
-        int max_rating
-        int easy
-        int medium
-        int hard
-    }
-    user_streak {
-        string user_id PK
-        int curr_streak
-        int longest_streak
-        string updated_on
-    }
-    problems {
-        string problem_id PK
-        string platform
-        string title
-        string difficulty
-        int rating
-        string_array tags
-    }
-    solved_problems {
-        string user_id FK
-        string problem_id FK
-        string platform
-        string solved_date
-        string solved_at
-        boolean already_solved
-    }
-    daily_count {
-        string user_id FK
-        string date
-        int solved
-    }
-    user_contest {
-        string user_id FK
-        string contest_id
-        string platform
-        int rank
-        int rating
-        string date
-    }
-    mentorships {
-        string id PK
-        string mentor_id FK
-        string mentee_id FK
-        string status
-    }
-    mentee_groups {
-        string id PK
-        string mentor_id FK
-        string name
-    }
-    mentee_group_members {
-        string group_id FK
-        string mentee_id FK
-    }
-    assignments {
-        string id PK
-        string mentor_id FK
-        string mentee_id FK
-        string problem_id FK
-        string platform
-        string title
-        string url
-        string note
-        string due_date
-        string status
-        string completed_via
-    }
-    mentor_notes {
-        string id PK
-        string mentor_id FK
-        string mentee_id FK
-        string body
-    }
-    invites {
-        string id PK
-        string token
-        string mentor_id FK
-        string invitee_email
-        string invitee_user_id FK
-        string status
-        string expires_at
-    }
+### Edge / Middleware Routing (`proxy.ts`)
+- Intercepts incoming requests to guard protected routes (`/dashboard/*`, `/onboarding`).
+- Redirects unauthenticated users to `/auth` and incomplete onboarding profiles to `/onboarding`.
 
-    profile ||--o{ user_platforms : "owns"
-    profile ||--o{ user_platform_data : "tracks"
-    profile ||--o| user_streak : "has"
-    profile ||--o{ solved_problems : "solves"
-    problems ||--o{ solved_problems : "referenced_in"
-    problems ||--o{ assignments : "assigned_as"
-    profile ||--o{ daily_count : "records"
-    profile ||--o{ user_contest : "attends"
-    profile ||--o{ mentorships : "mentor_in"
-    profile ||--o{ mentorships : "mentee_in"
-    profile ||--o{ mentee_groups : "created_by"
-    mentee_groups ||--o{ mentee_group_members : "contains"
-    profile ||--o{ assignments : "assigned_to"
-    profile ||--o{ mentor_notes : "receives"
-    profile ||--o{ invites : "sent_by"
-```
+### Route Handlers
+- `GET /auth/callback`: Handles OAuth authorization code exchange.
+- `POST /api/account/delete`: Hard deletes all user-scoped records, AWS S3 avatars, and authentication identity upon strict confirmation.
+
+### Server Actions (`app/actions/`)
+- `analytics.actions.ts`: Aggregates profile statistics, streak calculations, heatmap arrays, topic distribution, and paginated problem histories.
+- `mentorship.actions.ts`: Manages user search, invitation sending via SMTP, invite responses, and mentee roster summaries.
+- `assignment.actions.ts`: Resolves problem metadata, persists assignments, tracks task completion, and computes mentor insights.
+- `group.actions.ts`: Handles creation, membership editing, and batch problem/note assignments for mentor groups.
+- `avatar.actions.ts`: Manages binary image uploads to AWS S3 and profile URL updates.
 
 ---
 
-## 6. API Surface, Routes & Interfaces
+## 5. Security, Trust Boundaries & Data Protection
 
-### HTTP Route Handlers
-
-| Method | Endpoint | Handler File | Auth Required | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/auth/callback` | `app/auth/callback/route.ts` | No | Handles OAuth code exchange for Supabase Auth and redirects to onboarding or dashboard |
-| `POST` | `/api/account/delete` | `app/api/account/delete/route.ts` | Yes | Wipes all user data across PostgreSQL tables, S3 avatar prefixes, and Supabase Auth |
-
-### Core Server Actions
-
-| Category | Exported Action | Auth / Authorization | Description |
-| :--- | :--- | :--- | :--- |
-| **Analytics** | `getDashboardData(userId)` | Auth Session | Fetches consolidated profile, streak, heatmap, stats, contest rating, and topic analytics |
-| **Analytics** | `getPaginatedSolvedProblems(userId, page, pageSize, filters)` | Auth Session | Returns paginated solved problems filtered by platform, difficulty, topic, or date range |
-| **Assignments** | `assignProblem({ menteeId, url, dueDate, note })` | Active Mentor Guard | Resolves problem metadata from URL and inserts an assignment for a mentee |
-| **Assignments** | `getAssignmentInsights(menteeId)` | Active Mentor Guard | Provides verified assignment completion statistics against actual solve history |
-| **Contests** | `getUpcomingContests()` | Public / Non-Auth | Scrapes or fetches upcoming contest schedules from Codeforces, LeetCode, and AtCoder |
-| **Mentorship** | `sendInvite({ userId, email })` | Auth Session | Generates a mentorship invitation link and sends an email via Nodemailer |
-| **Mentorship** | `respondToInvite(token, accept)` | Auth Session | Accepts or declines a mentorship invite, establishing a record in `mentorships` on accept |
-| **Groups** | `assignProblemToGroup({ groupId, url, ... })` | Auth Session | Resolves problem metadata once and fans out assignments to all members of a group |
-| **Avatar** | `uploadAvatar(formData)` | Auth Session | Uploads an image payload to AWS S3 and updates `profile.avatar_url` |
+- **Authentication**: Managed via Supabase Auth issuing JWT tokens stored in HTTP-only cookies handled by `@supabase/ssr`.
+- **Authorization & RLS**: PostgreSQL Row-Level Security ensures users can only access their own profile and task data.
+- **Cross-User Data Access**: Mentors access mentee analytics strictly via server-side authorization guards (`assertMentorOf`, `isActiveMentorship`) utilizing a service-role client (`getServiceRoleClient()`).
+- **Data Erasure**: Complete, cascading account wipe via `deleteAccountCompletely()` across all 13 user-scoped tables and S3 object prefixes (`avatars/{userId}/`).
 
 ---
 
-## 7. Key Data Flows & Sequences
+## 6. External System Integrations & Resilience
 
-### Problem Assignment & Metadata Resolution Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Mentor
-    participant SA as Server Action (assignProblem)
-    participant Guard as Access Guard (assertMentorOf)
-    participant Resolver as Meta Resolver (fetchProblemMeta)
-    participant Ext as External Judge (LeetCode GraphQL / CF / AtCoder)
-    participant DB as Supabase PostgreSQL
-
-    Mentor->>SA: Submit Problem URL & Mentee ID
-    SA->>Guard: Verify mentor-mentee link
-    Guard-->>SA: Authorized
-    SA->>Resolver: Resolve problem URL
-    Resolver->>Ext: Fetch metadata (GraphQL / API / Scraper)
-    Ext-->>Resolver: Return Title, Difficulty, Rating, Tags
-    Resolver->>DB: Upsert metadata into `problems` catalog
-    SA->>DB: Insert record into `assignments` table
-    DB-->>SA: Confirm insertion
-    SA-->>Mentor: Return ActionResult success
-```
-
----
-
-## 8. Configuration & Environment Variables
-
-| Variable Name | Required | Description |
-| :--- | :--- | :--- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL for browser and server clients |
-| `NEXT_PUBLIC_ANON_KEY` | Yes | Supabase public anonymous API key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service-role key used to bypass RLS for cross-user mentorship analytics and account deletion |
-| `NEXT_PUBLIC_APP_URL` | No | Base application URL used to construct invite links (defaults to `http://localhost:3000`) |
-| `NEXT_PUBLIC_SERVER_URL` | No | External worker service URL for initiating background user syncs |
-| `AWS_REGION` | Yes | AWS region hosting the S3 bucket |
-| `AWS_ACCESS_KEY_ID` | Yes | AWS IAM access key ID for S3 operations |
-| `AWS_SECRET_ACCESS_KEY` | Yes | AWS IAM secret access key for S3 operations |
-| `AWS_S3_BUCKET_NAME` | Yes | AWS S3 bucket name storing user avatar uploads |
-| `SMTP_HOST` | No | Hostname of the SMTP server for sending invitation emails |
-| `SMTP_PORT` | No | Port for the SMTP server (defaults to `465`) |
-| `SMTP_USER` | No | Username / email address for SMTP authentication |
-| `SMTP_PASS` | No | Password / App password for SMTP authentication |
-| `EMAIL_FROM` | No | Display name and address formatted for outgoing emails |
+- **Hardened HTTP Client (`app/lib/problemMeta/httpClient.ts`)**:
+  - Implements per-host request queues (`codeforces.com`, `leetcode.com`, `kenkoooo.com`) to prevent rate limiting.
+  - Enforces exponential backoff with jitter and retry handling for `403`, `429`, and `5xx` responses.
+  - Leverages single-flight execution and in-memory TTL caching for heavy catalog endpoints.
+- **Redis Caching (`app/lib/redis/client.ts`)**:
+  - Caches public contest schedules (`contests:upcoming`, `contests:past`) for 1800 seconds to decouple user queries from external API availability.

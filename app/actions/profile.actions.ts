@@ -81,6 +81,36 @@ export async function addPlatformHandles(
     return { error: null, affectedPlatforms };
 }
 
+/**
+ * CSES-only: saves just the mentee's CSES username, with no verification and
+ * no worker sync — CSES has no public way to check a bare username, so this
+ * is display-only until the mentee separately provides a session cookie or
+ * password on the settings page (see ConnectCsesForm.tsx, which posts
+ * directly to the worker's own POST /cses/connect and does the real
+ * verification + import). Deliberately NOT folded into addPlatformHandles/PlatformKey above
+ * — that function's `affectedPlatforms` return value drives an immediate
+ * worker resync, which would be wrong here since there's no session yet to
+ * sync anything with.
+ */
+export async function saveCsesUsername(user_id: string, username: string): Promise<{ error: null }> {
+    const supabase = await createSupabaseServerClient();
+    const handle = normalizeHandle(username);
+
+    if (!handle) {
+        return { error: null };
+    }
+
+    const { error } = await supabase
+        .from(PLATFORM_TABLE)
+        .upsert({ user_id, platform: "cses", handle }, { onConflict: "user_id,platform" });
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return { error: null };
+}
+
 export async function completeOnboarding(user_id: string, profile: ProfileDetails) {
     const supabase = await createSupabaseServerClient();
 

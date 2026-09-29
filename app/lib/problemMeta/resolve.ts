@@ -32,7 +32,7 @@ interface LeetCodeQuestion {
 export const fetchProblemMeta = async (rawUrl: string): Promise<ProblemEntry> => {
     const parsed = parseProblemUrl(rawUrl);
     if (!parsed) {
-        throw new Error("Unsupported or malformed problem URL. Use a LeetCode, Codeforces, or AtCoder problem link.");
+        throw new Error("Unsupported or malformed problem URL. Use a LeetCode, Codeforces, AtCoder, or CSES problem link.");
     }
 
     console.log(`[problemMeta] Resolving ${parsed.platform} problem ${parsed.problem_id}`);
@@ -44,6 +44,8 @@ export const fetchProblemMeta = async (rawUrl: string): Promise<ProblemEntry> =>
             return fetchCodeforcesMeta(parsed);
         case "atcoder":
             return fetchAtcoderMeta(parsed);
+        case "cses":
+            return fetchCsesMeta(parsed);
     }
 };
 
@@ -262,5 +264,81 @@ async function fetchAtcoderMeta(
         rating,
         // AtCoder exposes no topic tags.
         tags: [],
+    };
+}
+
+
+// -- CSES: public problemset list (name, category, global solve stats) ----
+// No worker-side helper to import here (this file duplicates the worker's
+// services/problemMeta.ts on purpose, same as the LeetCode/CF/AtCoder
+// resolvers above) -- so the task-list parse is reimplemented locally.
+// Mirrors services/cses/client.ts's parseTaskList in the worker, trimmed to
+// just what this resolver needs (name, category, global solve counts; no
+// per-mentee "solved" status, which requires a logged-in session anyway).
+interface CsesTaskInfo {
+    name: string;
+    category: string;
+    solvedBy: number;
+    attemptedBy: number;
+}
+
+function parseCsesTaskList(html: string): Map<number, CsesTaskInfo> {
+    const $ = cheerio.load(html);
+    const map = new Map<number, CsesTaskInfo>();
+
+    $("h2").each((_, h2) => {
+        const ul = $(h2).next("ul.task-list");
+        const items = ul.find("li.task");
+        if (!ul.length || !items.length) return;
+
+        const category = $(h2).text().trim();
+
+        items.each((__, li) => {
+            const anchor = $(li).find("a").first();
+            const idMatch = /\/problemset\/task\/(\d+)/.exec(anchor.attr("href") ?? "");
+            if (!idMatch || !idMatch[1]) return;
+
+            const numbers = ($(li).find("span.detail").text().match(/\d+/g) ?? []).map(Number);
+
+            map.set(Number(idMatch[1]), {
+                name: anchor.text().trim(),
+                category,
+                solvedBy: numbers[0] ?? 0,
+                attemptedBy: numbers[1] ?? 0,
+            });
+        });
+    });
+
+    return map;
+}
+
+async function getCsesCatalog(): Promise<Map<number, CsesTaskInfo>> {
+    return cached("cses-tasklist", CATALOG_TTL_MS, async () => {
+        console.log("[problemMeta] Loading CSES problem list catalog...");
+        const html = await fetchText("https://cses.fi/problemset/list/", { label: "CSES problemset list" });
+        const map = parseCsesTaskList(html);
+        console.log(`[problemMeta] Cached ${map.size} CSES problems`);
+        return map;
+    });
+}
+
+async function fetchCsesMeta(parsed: Extract<ParsedProblem, { platform: "cses" }>): Promise<ProblemEntry> {
+    const catalog = await getCsesCatalog();
+    const info = catalog.get(Number(parsed.taskId));
+    if (!info) {
+        throw new Error(`CSES problem "${parsed.taskId}" not found.`);
+    }
+
+    // Same solve-rate-as-difficulty heuristic as the worker's
+    // utils/dbHelper.ts uses when ingesting a mentee's own solves.
+    const solveRatePercent = info.attemptedBy > 0 ? Math.round((info.solvedBy / info.attemptedBy) * 100) : 100;
+
+    return {
+        problem_id: parsed.problem_id,
+        platform: "cses",
+        title: info.name,
+        difficulty: difficultyMap("cses", solveRatePercent),
+        rating: 0,
+        tags: [info.category.toLowerCase()],
     };
 }

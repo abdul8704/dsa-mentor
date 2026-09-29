@@ -31,6 +31,7 @@ const PLATFORM_COLOR_MAP: Record<string, "primary" | "tertiary" | "secondary"> =
   leetcode: "primary",
   atcoder: "tertiary",
   codeforces: "secondary",
+  cses: "secondary", // reuses Codeforces' color key rather than adding a 4th
 };
 
 const DIFFICULTY_ITEMS = [

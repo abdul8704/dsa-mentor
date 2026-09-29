@@ -5,13 +5,50 @@ const globalForRedis = globalThis as unknown as {
     redis: Redis | undefined;
 };
 
+/**
+ * Builds a connection URL for Redis Cloud from discrete REDIS_HOST/PORT/
+ * USERNAME/PASSWORD/TLS vars (as they appear on the Redis Cloud dashboard),
+ * for deployments that set those instead of a single REDIS_URL. Returns
+ * null when neither is configured, so the caller can fall back to a plain
+ * local Redis for dev.
+ */
+function buildRedisUrlFromParts(): string | null {
+    if (!process.env.REDIS_HOST) {
+        return null;
+    }
+
+    const scheme = process.env.REDIS_TLS === "true" ? "rediss" : "redis";
+    const port = process.env.REDIS_PORT ?? "6379";
+
+    let auth = "";
+    if (process.env.REDIS_USERNAME) {
+        auth = `${encodeURIComponent(process.env.REDIS_USERNAME)}:${encodeURIComponent(process.env.REDIS_PASSWORD ?? "")}@`;
+    } else if (process.env.REDIS_PASSWORD) {
+        auth = `:${encodeURIComponent(process.env.REDIS_PASSWORD)}@`;
+    }
+
+    return `${scheme}://${auth}${process.env.REDIS_HOST}:${port}`;
+}
+
 function createRedisInstance(): Redis {
-    const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+    // REDIS_URL (a full Redis Cloud connection string, e.g.
+    // "redis://default:<password>@<host>:<port>") takes priority when set;
+    // otherwise build one from the discrete REDIS_HOST/PORT/USERNAME/
+    // PASSWORD/TLS vars; otherwise fall back to a plain local Redis for dev.
+    const redisUrl = process.env.REDIS_URL || buildRedisUrlFromParts() || "redis://localhost:6379";
+
+    // Redis Cloud's TLS-enabled endpoints use a "rediss://" URL, which
+    // ioredis auto-detects — REDIS_TLS is only needed as an explicit
+    // override for cases where the URL itself doesn't carry the scheme
+    // (e.g. a REDIS_URL that's "redis://..." but the endpoint still expects
+    // TLS). Leave it unset/false for a plain, non-TLS Redis Cloud endpoint.
+    const useTls = redisUrl.startsWith("rediss://") || process.env.REDIS_TLS === "true";
 
     const client = new Redis(redisUrl, {
         maxRetriesPerRequest: 1,
         enableOfflineQueue: false, // Fail fast if Redis is down rather than hanging requests
         connectTimeout: 2000,
+        tls: useTls ? {} : undefined,
         retryStrategy(times) {
             // Reconnect after a delay, maxing out at 5 seconds
             return Math.min(times * 500, 5000);

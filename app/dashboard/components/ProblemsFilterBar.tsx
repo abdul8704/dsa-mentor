@@ -7,7 +7,7 @@ interface ProblemsFilterBarProps {
   topics: string[];
 }
 
-const PLATFORM_OPTIONS = ["leetcode", "codeforces", "atcoder"];
+const PLATFORM_OPTIONS = ["leetcode", "codeforces", "atcoder", "cses"];
 const DIFFICULTY_OPTIONS = ["easy", "medium", "hard"];
 
 const FIELD_LABEL_CLASS =

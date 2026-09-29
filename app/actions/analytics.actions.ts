@@ -39,17 +39,24 @@ const PLATFORM_ICON_MAP: Record<string, string> = {
   leetcode: "code",
   codeforces: "public",
   atcoder: "terminal",
+  cses: "school",
 };
 
-/** Maps platform name → color key for the UI. */
+/**
+ * Maps platform name → color key for the UI. CSES deliberately reuses
+ * "secondary" (Codeforces' key) rather than introducing a 4th color — the
+ * color system (COLOR_STYLES etc.) only defines primary/tertiary/secondary,
+ * and CSES is the same "plain judge, no ratings" flavor as Codeforces.
+ */
 const PLATFORM_COLOR_MAP: Record<string, "primary" | "tertiary" | "secondary"> = {
   leetcode: "primary",
   atcoder: "tertiary",
   codeforces: "secondary",
+  cses: "secondary",
 };
 
 /** Only these platforms are supported by onboarding/refresh — anything else (e.g. stray "github" rows) is ignored. */
-const SUPPORTED_PLATFORMS = ["leetcode", "codeforces", "atcoder"] as const;
+const SUPPORTED_PLATFORMS = ["leetcode", "codeforces", "atcoder", "cses"] as const;
 
 // ─── Server Actions ─────────────────────────────────────────────────────────
 

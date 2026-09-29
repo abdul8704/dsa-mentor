@@ -6,15 +6,17 @@ import "server-only";
  * The problem_id convention MUST match the one used when ingesting solved
  * problems in the worker, otherwise auto-completion (which matches an
  * assigned problem_id against the mentee's solved_problems) will never fire:
- *   - LeetCode:   "LC"  + titleSlug        e.g. LCtwo-sum
- *   - Codeforces: "CF"  + contestId + index e.g. CF1234A
- *   - AtCoder:    "ATC" + taskId           e.g. ATCabc300_a
+ *   - LeetCode:   "LC"   + titleSlug        e.g. LCtwo-sum
+ *   - Codeforces: "CF"   + contestId + index e.g. CF1234A
+ *   - AtCoder:    "ATC"  + taskId           e.g. ATCabc300_a
+ *   - CSES:       "CSES" + taskId           e.g. CSES1068
  */
 
 export type ParsedProblem =
     | { platform: "leetcode"; problem_id: string; slug: string }
     | { platform: "codeforces"; problem_id: string; contestId: string; index: string }
-    | { platform: "atcoder"; problem_id: string; taskId: string };
+    | { platform: "atcoder"; problem_id: string; taskId: string }
+    | { platform: "cses"; problem_id: string; taskId: string };
 
 /**
  * Attempts to parse a problem URL. Returns null when the URL is not a
@@ -77,6 +79,20 @@ export const parseProblemUrl = (rawUrl: string): ParsedProblem | null => {
         if (idx !== -1 && segments[idx + 1]) {
             const taskId = segments[idx + 1]!.toLowerCase();
             return { platform: "atcoder", problem_id: `ATC${taskId}`, taskId };
+        }
+        return null;
+    }
+
+    // ---- CSES: cses.fi/problemset/task/<taskId> ----
+    // taskId is purely numeric on CSES -- matches services/cses/client.ts's
+    // CSESTask.taskId and utils/dbHelper.ts's platformMap["cses"] = "CSES"
+    // prefix exactly, so an assigned CSES problem_id auto-completes correctly
+    // once the mentee's solved_problems row lands.
+    if (host === "cses.fi") {
+        const idx = segments.indexOf("task");
+        if (idx !== -1 && segments[idx + 1] && /^\d+$/.test(segments[idx + 1]!)) {
+            const taskId = segments[idx + 1]!;
+            return { platform: "cses", problem_id: `CSES${taskId}`, taskId };
         }
         return null;
     }

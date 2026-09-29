@@ -4,8 +4,9 @@ import { Bricolage_Grotesque, Space_Grotesk } from "next/font/google";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getBrowserClient } from "@/app/lib/supabase/browser-client";
-import { addPlatformHandles, completeOnboarding } from "../actions/profile.actions";
+import { addPlatformHandles, completeOnboarding, saveCsesUsername } from "../actions/profile.actions";
 import { uploadAvatar, removeAvatar } from "../actions/avatar.actions";
+import ConnectCsesForm from "../dashboard/components/ConnectCsesForm";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -103,6 +104,9 @@ export default function OnboardingForm({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+    // CSES has its own field below, deliberately outside `formState`/
+    // `PLATFORM_FIELDS` — see saveCsesUsername's doc comment for why.
+    const [csesUsername, setCsesUsername] = useState("");
 
     useEffect(() => {
         setIsMounted(true);
@@ -133,6 +137,7 @@ export default function OnboardingForm({
 
     useEffect(() => {
         setFormState(buildInitialFormState(platforms));
+        setCsesUsername(platforms?.find((p) => p.platform === "cses")?.handle ?? "");
     }, [platforms]);
 
     useEffect(() => {
@@ -302,7 +307,9 @@ export default function OnboardingForm({
             }))
             .filter((entry) => entry.handle.length > 0);
 
-        if (nextPayload.length === 0) {
+        const trimmedCsesUsername = csesUsername.trim();
+
+        if (nextPayload.length === 0 && !trimmedCsesUsername) {
             setStatus("Add at least one handle before submitting.");
             return;
         }
@@ -311,7 +318,17 @@ export default function OnboardingForm({
         setStatus("Saving your platform handles...");
 
         try {
-            const { affectedPlatforms } = await addPlatformHandles(userId, nextPayload);
+            const affectedPlatforms = nextPayload.length > 0
+                ? (await addPlatformHandles(userId, nextPayload)).affectedPlatforms
+                : [];
+
+            // CSES has no bare-handle verification (see saveCsesUsername's doc
+            // comment) so it never contributes to `affectedPlatforms` / the
+            // fresh-init resync below — saving it is a plain, unrelated write.
+            if (trimmedCsesUsername) {
+                await saveCsesUsername(userId, trimmedCsesUsername);
+            }
+
             await completeOnboarding(userId, {
                 name: trimmedName,
                 description: profileState.description,
@@ -697,6 +714,29 @@ export default function OnboardingForm({
                                         />
                                     </div>
                                 ))}
+
+                                <div className="onboarding-field">
+                                    <label className="auth-label" htmlFor="cses">
+                                        CSES
+                                    </label>
+                                    <input
+                                        className="auth-input"
+                                        id="cses"
+                                        name="cses"
+                                        type="text"
+                                        placeholder="your_cses_username"
+                                        value={csesUsername}
+                                        onChange={(e) => setCsesUsername(e.target.value)}
+                                    />
+                                    <p className="onboarding-field-hint">
+                                        CSES has no public API — this just saves your username. Connect your
+                                        session or password from{" "}
+                                        <a href="/onboarding?edit=1" className="onboarding-inline-link">
+                                            Settings
+                                        </a>{" "}
+                                        to actually import your solved problems.
+                                    </p>
+                                </div>
                             </div>
 
                             <button className="auth-cta onboarding-cta" type="submit" disabled={isSubmitting || isInitializing}>
@@ -714,6 +754,12 @@ export default function OnboardingForm({
                         <div className="onboarding-footer">
                             <p className="onboarding-status">{status}</p>
                         </div>
+
+                        {isEditing && userId && (
+                            <div className="onboarding-settings-section">
+                                <ConnectCsesForm userId={userId} />
+                            </div>
+                        )}
 
                         {isEditing && (
                             <div className="onboarding-danger-zone">

@@ -13,6 +13,7 @@
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
     "@types/ioredis": "^4.28.10",
+    "@upstash/redis": "^1.39.0",
     "axios": "^1.17.0",
     "cheerio": "^1.2.0",
     "ioredis": "^6.0.0",

@@ -7,6 +7,8 @@ import { getBrowserClient } from "@/app/lib/supabase/browser-client";
 import { addPlatformHandles, completeOnboarding, saveCsesUsername } from "../actions/profile.actions";
 import { uploadAvatar, removeAvatar } from "../actions/avatar.actions";
 import ConnectCsesForm from "../dashboard/components/ConnectCsesForm";
+import ConnectLeetcodeForm from "../dashboard/components/ConnectLeetcodeForm";
+import PublicApiSettings from "../dashboard/components/PublicApiSettings";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -757,7 +759,9 @@ export default function OnboardingForm({
 
                         {isEditing && userId && (
                             <div className="onboarding-settings-section">
+                                <ConnectLeetcodeForm userId={userId} />
                                 <ConnectCsesForm userId={userId} />
+                                <PublicApiSettings />
                             </div>
                         )}
 

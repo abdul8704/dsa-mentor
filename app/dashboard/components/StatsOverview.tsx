@@ -14,16 +14,16 @@ const DEFAULT_DIFFICULTY: PlatformDifficultyMap = {
 };
 
 const PLATFORM_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  primary: { bg: "rgba(244,113,68,0.08)", border: "rgba(244,113,68,0.2)", text: "#ffb59d" },
-  tertiary: { bg: "rgba(78,222,163,0.08)", border: "rgba(78,222,163,0.2)", text: "#4edea3" },
-  secondary: { bg: "rgba(200,198,201,0.08)", border: "rgba(200,198,201,0.2)", text: "#c8c6c9" },
+  primary: { bg: "color-mix(in srgb, var(--dash-accent) 8%, transparent)", border: "color-mix(in srgb, var(--dash-accent) 20%, transparent)", text: "var(--dash-accent-soft)" },
+  tertiary: { bg: "color-mix(in srgb, var(--dash-feedback-success) 8%, transparent)", border: "color-mix(in srgb, var(--dash-feedback-success) 20%, transparent)", text: "var(--dash-feedback-success)" },
+  secondary: { bg: "var(--dash-surface-sunken)", border: "var(--dash-border-strong)", text: "var(--dash-content-primary)" },
 };
 
 /** Active (selected) platform pill styles */
 const PLATFORM_ACTIVE_COLORS: Record<string, { bg: string; border: string }> = {
-  primary: { bg: "rgba(244,113,68,0.22)", border: "rgba(244,113,68,0.55)" },
-  tertiary: { bg: "rgba(78,222,163,0.22)", border: "rgba(78,222,163,0.55)" },
-  secondary: { bg: "rgba(200,198,201,0.22)", border: "rgba(200,198,201,0.55)" },
+  primary: { bg: "color-mix(in srgb, var(--dash-accent) 22%, transparent)", border: "color-mix(in srgb, var(--dash-accent) 55%, transparent)" },
+  tertiary: { bg: "color-mix(in srgb, var(--dash-feedback-success) 22%, transparent)", border: "color-mix(in srgb, var(--dash-feedback-success) 55%, transparent)" },
+  secondary: { bg: "var(--dash-surface-sunken)", border: "var(--dash-border-strong)" },
 };
 
 /** Map platform names → color keys for UI styling */
@@ -35,9 +35,9 @@ const PLATFORM_COLOR_MAP: Record<string, "primary" | "tertiary" | "secondary"> =
 };
 
 const DIFFICULTY_ITEMS = [
-  { key: "easy" as const, label: "Easy", color: "#6ffbbe", dotClass: "bg-[#6ffbbe]" },
-  { key: "medium" as const, label: "Medium", color: "#ffb700", dotClass: "bg-[#ffb700]" },
-  { key: "hard" as const, label: "Hard", color: "#f63737", dotClass: "bg-[#f63737]" },
+  { key: "easy" as const, label: "Easy", color: "var(--dash-feedback-success)" },
+  { key: "medium" as const, label: "Medium", color: "var(--dash-feedback-warning)" },
+  { key: "hard" as const, label: "Hard", color: "var(--dash-feedback-danger)" },
 ];
 
 const DONUT_RADIUS = 40;
@@ -141,31 +141,40 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
     setSelectedPlatform(null);
   }
 
+  const chartDescription = `${selectedPlatform ?? "All platforms"}: ${d.total} solved — ${d.easy} easy, ${d.medium} medium, ${d.hard} hard`;
+
   return (
-    <div className="glass-card rounded-xl p-5 lg:p-6 flex flex-col lg:flex-row gap-0 h-full">
+    <div className="card-quiet rounded-xl p-5 lg:p-6 flex flex-col lg:flex-row gap-0 h-full">
       {/* ── Left 1/3: Donut Chart ── */}
-      <div className="lg:w-1/3 flex flex-col items-center justify-center py-4 lg:py-0 lg:border-r lg:border-white/5 lg:pr-5">
+      <div className="lg:w-1/3 flex flex-col items-center justify-center py-4 lg:py-0 lg:border-r lg:pr-5" style={{ borderColor: "var(--dash-border-subtle)" }}>
         <div className="flex items-center gap-2 mb-4 self-start lg:self-center">
           <h4
-            className="text-xs tracking-[0.12em] font-medium uppercase text-[#a78b82]"
-            style={{ fontFamily: "var(--font-geist-mono)" }}
+            className="tracking-[0.12em] font-medium uppercase text-[color:var(--dash-content-tertiary)]"
+            style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-caption)" }}
           >
             Stats Overview
           </h4>
           {selectedPlatform && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-[#dfc0b6] capitalize">
+            <span
+              className="font-bold px-2 py-0.5 rounded capitalize text-[color:var(--dash-content-secondary)]"
+              style={{ background: "var(--dash-surface-sunken)", fontSize: "var(--dash-text-caption)" }}
+            >
               {selectedPlatform}
             </span>
           )}
         </div>
-        <div className="relative w-36 h-36 lg:w-44 lg:h-44 flex items-center justify-center flex-shrink-0">
-          <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100">
+        <div
+          className="relative w-36 h-36 lg:w-44 lg:h-44 flex items-center justify-center flex-shrink-0"
+          role="img"
+          aria-label={chartDescription}
+        >
+          <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100" aria-hidden="true">
             <circle
               cx="50"
               cy="50"
               r={DONUT_RADIUS}
               fill="none"
-              stroke="rgba(255,255,255,0.05)"
+              stroke="var(--dash-surface-sunken)"
               strokeWidth={DONUT_STROKE}
             />
             {donutSegments.map((segment, index) => (
@@ -190,8 +199,8 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
             ))}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-sans)" }}>{d.total}</span>
-            <span className="text-[10px] uppercase text-[#a78b82] tracking-wider" style={{ fontFamily: "var(--font-geist-mono)" }}>Solved</span>
+            <span className="font-bold text-[color:var(--dash-content-primary)]" style={{ fontFamily: "var(--font-geist-sans)", fontSize: "var(--dash-text-value-lg)" }}>{d.total}</span>
+            <span className="uppercase tracking-wider text-[color:var(--dash-content-tertiary)]" style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-tick)" }}>Solved</span>
           </div>
         </div>
       </div>
@@ -204,12 +213,12 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
             {DIFFICULTY_ITEMS.map((item) => (
               <div key={item.key} className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-2 h-2 rounded-full ${item.dotClass}`} />
-                  <span className="text-[13px] text-[#dfc0b6]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-[color:var(--dash-content-secondary)]" style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-body)" }}>
                     {item.label}
                   </span>
                 </div>
-                <span className="text-[14px] font-semibold text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                <span className="font-semibold text-[color:var(--dash-content-primary)]" style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-value-sm)" }}>
                   {d[item.key]}
                 </span>
               </div>
@@ -218,7 +227,7 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
         </div>
 
         {/* Divider — only show when there are platform pills */}
-        {pills.length > 0 && <div className="h-px bg-white/5 my-3" />}
+        {pills.length > 0 && <div className="h-px my-3" style={{ background: "var(--dash-border-subtle)" }} />}
 
         {/* Bottom half: Platform pills (hover to filter difficulty) */}
         {pills.length > 0 && (
@@ -231,7 +240,8 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
                 const activeColors = PLATFORM_ACTIVE_COLORS[p.colorKey] ?? PLATFORM_ACTIVE_COLORS.primary;
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={p.name}
                     className={`flex-1 flex flex-col items-center justify-center rounded-lg py-3 px-2 cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg ${isActive ? "ring-1 ring-white/20" : ""}`}
                     style={{
@@ -240,20 +250,23 @@ export default function StatsOverview({ difficulty, platforms }: StatsOverviewPr
                     }}
                     onMouseEnter={() => handlePlatformHover(p.name)}
                     onMouseLeave={handlePlatformHoverEnd}
+                    onFocus={() => handlePlatformHover(p.name)}
+                    onBlur={handlePlatformHoverEnd}
+                    aria-pressed={isActive}
                   >
                     <span
-                      className="text-[11px] font-medium tracking-wide capitalize"
-                      style={{ color: colors.text, fontFamily: "var(--font-geist-mono)" }}
+                      className="font-medium tracking-wide capitalize"
+                      style={{ color: colors.text, fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-tick)" }}
                     >
                       {p.name}
                     </span>
                     <span
-                      className="text-[20px] font-bold mt-1 text-[#e5e1e4]"
-                      style={{ fontFamily: "var(--font-geist-sans)" }}
+                      className="font-bold mt-1 text-[color:var(--dash-content-primary)]"
+                      style={{ fontFamily: "var(--font-geist-sans)", fontSize: "var(--dash-text-value)" }}
                     >
                       {p.solvedCount}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>

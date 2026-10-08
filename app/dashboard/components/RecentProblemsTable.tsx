@@ -57,10 +57,35 @@ const AtCoderIcon: IconType = ({ size = 24 }) => {
   );
 };
 
+/** No official CSES brand mark in Simple Icons (same reason AtCoder gets a monogram above) — a plain "CS" glyph instead. */
+const CSESIcon: IconType = ({ size = 24 }) => {
+  const resolvedSize = typeof size === "number" ? size : parseInt(size, 10) || 24;
+
+  return (
+    <svg width={resolvedSize} height={resolvedSize} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="22" height="22" rx="6" fill="currentColor" fillOpacity="0.16" />
+      <text
+        x="12"
+        y="16.5"
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="800"
+        fontFamily="var(--font-geist-mono)"
+        fill="currentColor"
+      >
+        CS
+      </text>
+    </svg>
+  );
+};
+
 const PLATFORM_STYLES: Record<string, { bg: string; border: string; text: string; Icon: IconType }> = {
   leetcode: { bg: "rgba(244,113,68,0.08)", border: "rgba(244,113,68,0.2)", text: "#ffb59d", Icon: SiLeetcode },
   atcoder: { bg: "rgba(78,222,163,0.08)", border: "rgba(78,222,163,0.2)", text: "#4edea3", Icon: AtCoderIcon },
   codeforces: { bg: "rgba(200,198,201,0.08)", border: "rgba(200,198,201,0.2)", text: "#c8c6c9", Icon: SiCodeforces },
+  // Reuses Codeforces' color key, matching StatsOverview.tsx's PLATFORM_COLOR_MAP decision
+  // not to add a 4th color — only the icon distinguishes it here.
+  cses: { bg: "rgba(200,198,201,0.08)", border: "rgba(200,198,201,0.2)", text: "#c8c6c9", Icon: CSESIcon },
 };
 
 const DEFAULT_PLATFORM_STYLE = { bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", text: "#dfc0b6", Icon: SiCodeforces };

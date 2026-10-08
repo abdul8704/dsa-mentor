@@ -357,6 +357,9 @@ body {
 
 .onboarding-settings-section {
   margin-top: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 .onboarding-status {
@@ -1637,6 +1640,70 @@ body {
   scrollbar-color: #f47144 #131315;
 }
 
+/*
+ * ─── Dashboard design tokens ────────────────────────────────────────────
+ * The dashboard shell is always dark (see .dashboard-shell above), so
+ * these are single-theme. Layer 2 (semantic) tokens only — component code
+ * should reference these, not raw hex, so a palette change is a one-line
+ * edit here instead of a hunt through every chart component.
+ */
+.dashboard-shell {
+  /* Surfaces */
+  --dash-surface-base: #09090b;
+  --dash-surface-raised: rgba(24, 24, 27, 0.6);
+  --dash-surface-sunken: rgba(255, 255, 255, 0.05);
+  --dash-surface-quiet: rgba(255, 255, 255, 0.03);
+
+  /* Content */
+  --dash-content-primary: #e5e1e4;
+  --dash-content-secondary: #dfc0b6;
+  --dash-content-tertiary: #a78b82;
+  --dash-content-on-accent: #5d1800;
+
+  /* Borders */
+  --dash-border-subtle: rgba(255, 255, 255, 0.08);
+  --dash-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Brand / accent */
+  --dash-accent: #f47144;
+  --dash-accent-soft: #ffb59d;
+
+  /* Feedback (use only for genuinely good/bad values, never decoration) */
+  --dash-feedback-success: #4edea3;
+  --dash-feedback-warning: #ffb700;
+  --dash-feedback-danger: #ff8577;
+
+  /*
+   * Categorical chart palette — 8 hues chosen for distinguishability under
+   * deuteranopia/protanopia/tritanopia (Okabe–Ito derived), tuned for
+   * contrast on a near-black surface. Order is fixed: series N always gets
+   * chart-cat-N, so the same topic/platform is the same color everywhere.
+   */
+  --dash-chart-cat-1: #e8a33d; /* amber */
+  --dash-chart-cat-2: #5ab4e8; /* sky blue */
+  --dash-chart-cat-3: #4edea3; /* teal green */
+  --dash-chart-cat-4: #e8cf5a; /* yellow */
+  --dash-chart-cat-5: #c8acff; /* violet */
+  --dash-chart-cat-6: #ff8b5e; /* vermillion */
+  --dash-chart-cat-7: #e6a0c4; /* reddish purple */
+  --dash-chart-cat-8: #8c8c94; /* neutral grey — also used for "Others" */
+
+  /* Platform identity colors — tied to each site's real brand color, kept
+     separate from the categorical scale above since they're not swappable. */
+  --dash-platform-codeforces: #4ecbf4;
+  --dash-platform-leetcode: #ffb700;
+  --dash-platform-atcoder: var(--dash-feedback-success);
+
+  /* Type scale — ~1.2 ratio, sized for a dense analytics UI */
+  --dash-text-tick: 0.6875rem;   /* 11px — axis ticks, chart date labels */
+  --dash-text-caption: 0.625rem; /* 10px — micro uppercase captions */
+  --dash-text-label: 0.75rem;    /* 12px — section header labels */
+  --dash-text-body: 0.8125rem;   /* 13px — body/list text */
+  --dash-text-value-sm: 0.875rem;/* 14px — small stat values */
+  --dash-text-value: 1.25rem;    /* 20px — standard stat values */
+  --dash-text-value-lg: 1.875rem;/* 30px — hero stat values */
+}
+
 .material-symbols-outlined {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
@@ -1664,6 +1731,18 @@ body {
 
 .glass-card:hover {
   box-shadow: 0 8px 32px rgba(244, 113, 68, 0.08);
+}
+
+/*
+ * .card-quiet — flatter secondary-panel treatment. Reserve .glass-card
+ * (blur + gradient sheen + hover glow) for the few hero moments per screen
+ * (profile, streak/heatmap); everything else uses this so the page doesn't
+ * read as a wall of identical glowing tiles.
+ */
+.card-quiet {
+  background: var(--dash-surface-quiet);
+  border: 1px solid var(--dash-border-subtle);
+  position: relative;
 }
 
 @keyframes dashboard-fade-in {

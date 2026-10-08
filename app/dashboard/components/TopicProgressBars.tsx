@@ -18,15 +18,15 @@ const DEFAULT_DATA: TopicStat[] = [
   { topic: "Graph Theory", percentage: 15, problemCount: 5, trend: -3 },
 ];
 
-const BAR_COLORS = [
-  "bg-[#ffb59d]",
-  "bg-[#4edea3]",
-  "bg-[#c8acff]",
-  "bg-[#ffb700]",
-  "bg-[#1cbaba]",
-  "bg-[#f47144]",
-  "bg-[#6ffbbe]",
-  "bg-[#ffb4ab]",
+const BAR_COLOR_VARS = [
+  "--dash-chart-cat-1",
+  "--dash-chart-cat-2",
+  "--dash-chart-cat-3",
+  "--dash-chart-cat-4",
+  "--dash-chart-cat-5",
+  "--dash-chart-cat-6",
+  "--dash-chart-cat-7",
+  "--dash-chart-cat-8",
 ];
 
 const INITIAL_COUNT = 4;
@@ -42,45 +42,49 @@ export default function TopicProgressBars({ data }: TopicProgressBarsProps) {
   }, []);
 
   const visibleTopics = expanded ? topics : topics.slice(0, INITIAL_COUNT);
-  const maxPct = Math.max(...topics.map((t) => t.percentage), 1);
   const hasMore = topics.length > INITIAL_COUNT;
   const isEmpty = topics.length === 0;
 
   return (
-    <div className="glass-card rounded-xl p-6 lg:p-8">
+    <div className="card-quiet rounded-xl p-6 lg:p-8">
       <h4
-        className="text-[12px] tracking-[0.05em] font-medium uppercase text-[#dfc0b6] mb-6"
-        style={{ fontFamily: "var(--font-geist-mono)" }}
+        className="tracking-[0.05em] font-medium uppercase text-[color:var(--dash-content-secondary)] mb-6"
+        style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-label)" }}
       >
         Topic Breakdown — Last 7 Days
       </h4>
 
       {isEmpty ? (
         <div className="flex flex-col items-center justify-center text-center py-8 gap-2">
-          <span className="material-symbols-outlined text-3xl text-[#a78b82]">
+          <span className="material-symbols-outlined text-3xl text-[color:var(--dash-content-tertiary)]">
             inbox
           </span>
           <p
-            className="text-[13px] text-[#dfc0b6]"
-            style={{ fontFamily: "var(--font-geist-mono)" }}
+            className="text-[color:var(--dash-content-secondary)]"
+            style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-body)" }}
           >
             No problems solved in the last 7 days
           </p>
         </div>
       ) : (
-      <div className="space-y-4">
+      <div className="space-y-4" role="img" aria-label={
+        `Topic breakdown for the last 7 days: ${topics.map((t) => `${t.topic} ${Math.round(t.percentage)}%, ${t.problemCount} problems`).join("; ")}`
+      }>
         {visibleTopics.map((t, i) => {
-          const barWidth = animated ? (t.percentage / maxPct) * 100 : 0;
+          // Fixed 0–100 baseline — a bar's length is always the topic's true
+          // share, never rescaled against whichever topic happens to be the
+          // week's max (which used to exaggerate gaps between topics).
+          const barWidth = animated ? Math.min(t.percentage, 100) : 0;
           const trendUp = t.trend >= 0;
-          const colorClass = BAR_COLORS[i % BAR_COLORS.length];
+          const colorVar = BAR_COLOR_VARS[i % BAR_COLOR_VARS.length];
 
           return (
-            <div key={t.topic}>
+            <div key={t.topic} aria-hidden="true">
               {/* Label row: topic name above the bar */}
               <div className="flex items-center justify-between mb-1.5">
                 <span
-                  className="text-[13px] text-[#dfc0b6]"
-                  style={{ fontFamily: "var(--font-geist-mono)" }}
+                  className="text-[color:var(--dash-content-secondary)]"
+                  style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-body)" }}
                 >
                   {t.topic}
                 </span>
@@ -88,20 +92,22 @@ export default function TopicProgressBars({ data }: TopicProgressBarsProps) {
 
               {/* Bar + diff */}
               <div className="flex items-center gap-3">
-                {/* Histogram bar */}
-                <div className="flex-1 h-7 bg-white/5 rounded overflow-hidden relative">
+                {/* Histogram bar — track is the fixed 0–100 axis */}
+                <div className="flex-1 h-7 rounded overflow-hidden relative" style={{ background: "var(--dash-surface-sunken)" }}>
                   <div
-                    className={`${colorClass} h-full rounded transition-all duration-700 ease-out flex items-center justify-center`}
+                    className="h-full rounded transition-all duration-700 ease-out flex items-center justify-center"
                     style={{
                       width: `${barWidth}%`,
+                      backgroundColor: `var(${colorVar})`,
                       transitionDelay: `${i * 100}ms`,
                     }}
                   >
                     {/* Count inside the bar */}
                     <span
-                      className="text-[11px] font-bold text-[#131315] drop-shadow-sm"
+                      className="font-bold text-[#131315] drop-shadow-sm"
                       style={{
                         fontFamily: "var(--font-geist-mono)",
+                        fontSize: "var(--dash-text-tick)",
                         opacity: animated ? 1 : 0,
                         transition: "opacity 0.3s ease-out",
                         transitionDelay: `${i * 100 + 500}ms`,
@@ -114,10 +120,12 @@ export default function TopicProgressBars({ data }: TopicProgressBarsProps) {
 
                 {/* Trend diff adjacent to bar */}
                 <span
-                  className={`text-xs font-semibold w-12 text-right flex-shrink-0 ${
-                    trendUp ? "text-[#4edea3]" : "text-[#ffb4ab]"
-                  }`}
-                  style={{ fontFamily: "var(--font-geist-mono)" }}
+                  className="font-semibold w-12 text-right flex-shrink-0"
+                  style={{
+                    fontFamily: "var(--font-geist-mono)",
+                    fontSize: "var(--dash-text-tick)",
+                    color: trendUp ? "var(--dash-feedback-success)" : "var(--dash-feedback-danger)",
+                  }}
                 >
                   {trendUp ? "+" : ""}
                   {t.trend}
@@ -129,12 +137,33 @@ export default function TopicProgressBars({ data }: TopicProgressBarsProps) {
       </div>
       )}
 
+      {/* Accessible data table mirroring the bars above */}
+      {!isEmpty && (
+        <table className="sr-only">
+          <caption>Topic breakdown, last 7 days</caption>
+          <thead>
+            <tr><th>Topic</th><th>Problems solved</th><th>Share</th><th>Trend vs. prior week</th></tr>
+          </thead>
+          <tbody>
+            {topics.map((t) => (
+              <tr key={t.topic}>
+                <td>{t.topic}</td>
+                <td>{t.problemCount}</td>
+                <td>{Math.round(t.percentage)}%</td>
+                <td>{t.trend >= 0 ? "+" : ""}{t.trend}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
       {/* View More / View Less */}
       {!isEmpty && hasMore && (
-        <div className="mt-5 pt-4 border-t border-white/5">
+        <div className="mt-5 pt-4 border-t" style={{ borderColor: "var(--dash-border-subtle)" }}>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-xs text-[#ffb59d] font-bold flex items-center gap-1 hover:underline transition-colors"
+            className="text-xs font-bold flex items-center gap-1 hover:underline transition-colors"
+            style={{ color: "var(--dash-accent-soft)" }}
           >
             {expanded ? "View Less" : `View More (${topics.length - INITIAL_COUNT})`}
             <span

@@ -23,6 +23,7 @@ const USER_SCOPED_TABLES: { table: string; columns: string[] }[] = [
     { table: "user_platform_data", columns: ["user_id"] },
     { table: "user_platforms", columns: ["user_id"] },
     { table: "user-streak", columns: ["user_id"] },
+    { table: "public_profiles", columns: ["user_id"] },
     { table: "profile", columns: ["user_id"] },
 ];
 

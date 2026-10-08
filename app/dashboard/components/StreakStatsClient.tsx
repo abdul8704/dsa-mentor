@@ -30,62 +30,20 @@ function FlameIcon() {
       <div
         className="absolute inset-0 rounded-full blur-xl opacity-40"
         style={{
-          background: "radial-gradient(circle, rgba(244,113,68,0.6) 0%, transparent 70%)",
+          background: "radial-gradient(circle, color-mix(in srgb, var(--dash-accent) 60%, transparent) 0%, transparent 70%)",
         }}
       />
       <span
         className="material-symbols-outlined relative"
         style={{
           fontSize: "40px",
-          color: "#f47144",
+          color: "var(--dash-accent)",
           fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 48",
-          filter: "drop-shadow(0 2px 8px rgba(244,113,68,0.3))",
+          filter: "drop-shadow(0 2px 8px color-mix(in srgb, var(--dash-accent) 30%, transparent))",
         }}
       >
         local_fire_department
       </span>
-    </div>
-  );
-}
-
-interface MiniCardProps {
-  icon: string;
-  label: string;
-  value: string | number;
-  sub?: string;
-  accent: string;
-}
-
-function MiniCard({ icon, label, value, sub, accent }: MiniCardProps) {
-  return (
-    <div className="glass-card rounded-xl px-5 py-4 flex items-center justify-center gap-3.5 group h-full">
-      <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
-        style={{ background: `${accent}15` }}
-      >
-        <span className="material-symbols-outlined text-xl" style={{ color: accent }}>
-          {icon}
-        </span>
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span
-          className="text-xs tracking-widest font-medium uppercase text-[#a78b82] leading-tight"
-          style={{ fontFamily: "var(--font-geist-mono)" }}
-        >
-          {label}
-        </span>
-        <div className="flex items-baseline gap-1.5 mt-0.5">
-          <span
-            className="text-2xl font-bold leading-none tracking-tight"
-            style={{ fontFamily: "var(--font-geist-sans)", color: accent }}
-          >
-            {value}
-          </span>
-          {sub && (
-            <span className="text-xs text-[#a78b82] uppercase">{sub}</span>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
@@ -100,7 +58,9 @@ export default function StreakStatsClient({ streak, contestsAttended, contestsTo
 
   return (
     <div className="grid grid-cols-5 gap-3 h-full">
-      {/* 1. Longest Streak — with flame icon */}
+      {/* 1. Longest Streak — the hero tile in this group: flame icon + warm
+          gradient, so it reads as the headline stat rather than one of five
+          identical panels. */}
       <div
         className="col-span-2 glass-card rounded-xl px-5 py-4 flex items-center justify-center gap-4"
         style={{ background: "linear-gradient(135deg, rgba(24,24,27,0.7) 0%, rgba(30,22,18,0.6) 100%)" }}
@@ -108,43 +68,42 @@ export default function StreakStatsClient({ streak, contestsAttended, contestsTo
         <FlameIcon />
         <div className="flex flex-col min-w-0">
           <span
-            className="text-xs tracking-widest font-medium uppercase text-[#a78b82] leading-tight"
-            style={{ fontFamily: "var(--font-geist-mono)" }}
+            className="tracking-widest font-medium uppercase leading-tight text-[color:var(--dash-content-tertiary)]"
+            style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-caption)" }}
           >
             Longest Streak
           </span>
           <div className="flex items-baseline gap-1.5 mt-0.5">
             <span
-              className="text-2xl font-bold leading-none tracking-tight text-[#e5e1e4]"
-              style={{ fontFamily: "var(--font-geist-sans)" }}
+              className="font-bold leading-none tracking-tight text-[color:var(--dash-content-primary)]"
+              style={{ fontFamily: "var(--font-geist-sans)", fontSize: "var(--dash-text-value)" }}
             >
               {s.longestStreak}
             </span>
-            <span className="text-xs text-[#a78b82] uppercase">days</span>
+            <span className="uppercase text-[color:var(--dash-content-tertiary)]" style={{ fontSize: "var(--dash-text-caption)" }}>days</span>
           </div>
         </div>
       </div>
 
-      {/* 2. Last 7 Days — narrow text + wide line chart */}
-      <div className="col-span-3 glass-card rounded-xl px-4 py-3.5 flex items-stretch gap-0 overflow-hidden">
+      {/* 2. Last 7 Days — narrow text + wide line chart (secondary → quiet card) */}
+      <div className="col-span-3 card-quiet rounded-xl px-4 py-4 flex items-stretch gap-0 overflow-hidden min-h-[9rem]">
         {/* Left ~30%: labels */}
-        <div className="w-[30%] flex flex-col justify-center pr-1 border-r border-white/5">
+        <div className="w-[30%] flex flex-col justify-center pr-1 border-r" style={{ borderColor: "var(--dash-border-subtle)" }}>
           <span
-            className="text-xs tracking-widest font-medium uppercase text-[#a78b82] leading-tight"
-            style={{ fontFamily: "var(--font-geist-mono)" }}
+            className="tracking-widest font-medium uppercase leading-tight text-[color:var(--dash-content-tertiary)]"
+            style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-caption)" }}
           >
             Last 7 Days
           </span>
           <span
-            className="text-2xl font-bold leading-none tracking-tight text-[#4edea3] mt-1"
-            style={{ fontFamily: "var(--font-geist-sans)" }}
+            className="font-bold leading-none tracking-tight mt-1"
+            style={{ fontFamily: "var(--font-geist-sans)", fontSize: "var(--dash-text-value)", color: "var(--dash-feedback-success)" }}
           >
             {s.last7DaysSolved}
           </span>
           <span
-            className={`mt-1 inline-flex items-center gap-0.5 text-xs font-semibold ${
-              changeUp ? "text-[#4edea3]" : "text-[#ffb4ab]"
-            }`}
+            className="mt-1 inline-flex items-center gap-0.5 font-semibold"
+            style={{ fontSize: "var(--dash-text-tick)", color: changeUp ? "var(--dash-feedback-success)" : "var(--dash-feedback-danger)" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: "0.75rem" }}>
               {changeUp ? "arrow_upward" : "arrow_downward"}
@@ -154,34 +113,34 @@ export default function StreakStatsClient({ streak, contestsAttended, contestsTo
         </div>
 
         {/* Right ~70%: Line chart */}
-        <div className="w-[70%] pl-3 flex flex-col justify-center min-h-[4.5rem]">
+        <div className="w-[70%] pl-4 flex flex-col justify-center">
           <Last7DaysChart breakdown={s.last7DaysBreakdown} />
         </div>
       </div>
 
-      {/* Bottom row: equal width */}
+      {/* Bottom row: equal width, both secondary → quiet cards */}
       <div className="col-span-5 grid grid-cols-2 gap-3">
         {/* 3. Last 30 Days Solved */}
-        <div className="glass-card rounded-xl px-5 py-4 flex items-center justify-center gap-3.5 group h-full">
+        <div className="card-quiet rounded-xl px-5 py-4 flex items-center justify-center gap-3.5 group h-full">
           <div
             className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
-            style={{ background: "rgba(255,181,157,0.08)" }}
+            style={{ background: "color-mix(in srgb, var(--dash-accent-soft) 8%, transparent)" }}
           >
-            <span className="material-symbols-outlined text-xl" style={{ color: "#ffb59d" }}>
+            <span className="material-symbols-outlined text-xl" style={{ color: "var(--dash-accent-soft)" }}>
               calendar_month
             </span>
           </div>
           <div className="flex flex-col min-w-0">
             <span
-              className="text-xs tracking-widest font-medium uppercase text-[#a78b82] leading-tight"
-              style={{ fontFamily: "var(--font-geist-mono)" }}
+              className="tracking-widest font-medium uppercase leading-tight text-[color:var(--dash-content-tertiary)]"
+              style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-caption)" }}
             >
               Last 30 Days
             </span>
             <div className="flex items-baseline gap-2 mt-0.5">
               <span
-                className="text-2xl font-bold leading-none tracking-tight text-[#ffb59d]"
-                style={{ fontFamily: "var(--font-geist-sans)" }}
+                className="font-bold leading-none tracking-tight"
+                style={{ fontFamily: "var(--font-geist-sans)", fontSize: "var(--dash-text-value)", color: "var(--dash-accent-soft)" }}
               >
                 {s.solvedThisMonth}
               </span>
@@ -192,13 +151,12 @@ export default function StreakStatsClient({ streak, contestsAttended, contestsTo
                 const up = diff >= 0;
                 return (
                   <span className="flex items-center gap-0.5">
-                    <span className="text-[10px] text-[#a78b82]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                    <span className="text-[color:var(--dash-content-tertiary)]" style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-caption)" }}>
                       {prev}
                     </span>
                     <span
-                      className={`inline-flex items-center gap-px text-[10px] font-semibold ${
-                        up ? "text-[#4edea3]" : "text-[#ffb4ab]"
-                      }`}
+                      className="inline-flex items-center gap-px font-semibold"
+                      style={{ fontSize: "var(--dash-text-caption)", color: up ? "var(--dash-feedback-success)" : "var(--dash-feedback-danger)" }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: "10px" }}>
                         {up ? "arrow_upward" : "arrow_downward"}
@@ -213,36 +171,36 @@ export default function StreakStatsClient({ streak, contestsAttended, contestsTo
         </div>
 
         {/* 4. Contests Attended */}
-        <div className="glass-card rounded-xl px-5 py-4 flex items-center justify-center gap-3.5 group h-full">
+        <div className="card-quiet rounded-xl px-5 py-4 flex items-center justify-center gap-3.5 group h-full">
           <div
             className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
-            style={{ background: "rgba(200,172,255,0.08)" }}
+            style={{ background: "color-mix(in srgb, var(--dash-chart-cat-5) 8%, transparent)" }}
           >
-            <span className="material-symbols-outlined text-xl" style={{ color: "#c8acff" }}>
+            <span className="material-symbols-outlined text-xl" style={{ color: "var(--dash-chart-cat-5)" }}>
               emoji_events
             </span>
           </div>
           <div className="flex flex-col min-w-0">
             <span
-              className="text-xs tracking-widest font-medium uppercase text-[#a78b82] leading-tight"
-              style={{ fontFamily: "var(--font-geist-mono)" }}
+              className="tracking-widest font-medium uppercase leading-tight text-[color:var(--dash-content-tertiary)]"
+              style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-caption)" }}
             >
               Contests Attended
             </span>
             <div className="flex items-baseline gap-0.5 mt-0.5">
               <span
-                className="text-xl font-bold leading-none tracking-tight text-[#c8acff]"
-                style={{ fontFamily: "var(--font-geist-sans)" }}
+                className="font-bold leading-none tracking-tight"
+                style={{ fontFamily: "var(--font-geist-sans)", fontSize: "var(--dash-text-value-sm)", color: "var(--dash-chart-cat-5)" }}
               >
                 {contestsAttendedCount}
               </span>
               <span
-                className="text-xs text-[#a78b82] font-medium"
-                style={{ fontFamily: "var(--font-geist-mono)" }}
+                className="font-medium text-[color:var(--dash-content-tertiary)]"
+                style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-tick)" }}
               >
                 /{contestsTotal}
               </span>
-              <span className="text-[10px] text-[#a78b82] uppercase ml-1">last 7 days</span>
+              <span className="uppercase ml-1 text-[color:var(--dash-content-tertiary)]" style={{ fontSize: "var(--dash-text-caption)" }}>last 7 days</span>
             </div>
           </div>
         </div>

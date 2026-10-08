@@ -66,6 +66,8 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
     matcher: [
-        "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+        // api/public is the anonymous, opt-in public API: no session lookup
+        // or auth redirects (see app/api/public/v1/).
+        "/((?!_next/static|_next/image|favicon.ico|api/public|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
     ],
 };

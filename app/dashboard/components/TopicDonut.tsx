@@ -15,18 +15,30 @@ const DEFAULT_DATA: { accuracy: number; allTime: TopicStat[] } = {
 /** Maximum topics shown in collapsed view — rest collapse into "Others" */
 const MAX_VISIBLE = 5;
 
-const TOPIC_COLORS = [
-  "#f47144", "#4edea3", "#6ffbbe", "#ffb700", "#c8acff",
-  "#1cbaba", "#ffb4ab", "#93000a", "#a78b82", "#e5e1e4",
-];
+/**
+ * Single source of truth for topic colors: index N always maps to the same
+ * hue everywhere a topic is drawn (donut segment, legend dot, card text).
+ * Values come from the colorblind-safe categorical scale in globals.css —
+ * verified distinguishable under deuteranopia/protanopia/tritanopia — so a
+ * fix there updates every chart consistently instead of drifting per file.
+ */
+const TOPIC_COLOR_VARS = [
+  "--dash-chart-cat-1",
+  "--dash-chart-cat-2",
+  "--dash-chart-cat-3",
+  "--dash-chart-cat-4",
+  "--dash-chart-cat-5",
+  "--dash-chart-cat-6",
+  "--dash-chart-cat-7",
+  "--dash-chart-cat-8",
+] as const;
 
-const TOPIC_TEXT_COLORS = [
-  "text-[#ffb59d]", "text-[#4edea3]", "text-[#6ffbbe]", "text-[#ffb700]", "text-[#c8acff]",
-  "text-[#1cbaba]", "text-[#ffb4ab]", "text-[#ffb4ab]", "text-[#a78b82]", "text-[#e5e1e4]",
-];
+function topicColor(index: number): string {
+  return `var(${TOPIC_COLOR_VARS[index % TOPIC_COLOR_VARS.length]})`;
+}
 
 /** Color for the "Others" segment */
-const OTHERS_COLOR = "#555258";
+const OTHERS_COLOR = "var(--dash-content-tertiary)";
 
 export default function TopicDonut({ data }: TopicDonutProps) {
   const accuracy: number = data?.accuracy ?? DEFAULT_DATA.accuracy;
@@ -81,7 +93,7 @@ export default function TopicDonut({ data }: TopicDonutProps) {
   const segments = chartTopics.map((t, i) => {
     const proportion: number = t.problemCount / totalForChart;
     const dashLen: number = proportion * circumference;
-    const color: string = t.topic === "Others" ? OTHERS_COLOR : TOPIC_COLORS[i % TOPIC_COLORS.length];
+    const color: string = t.topic === "Others" ? OTHERS_COLOR : topicColor(i);
     const seg = { ...t, dashLen, offset, color };
     offset += dashLen;
     return seg;
@@ -90,20 +102,27 @@ export default function TopicDonut({ data }: TopicDonutProps) {
   // Total problem count for center label
   const totalProblems: number = allTopics.reduce((sum, t) => sum + t.problemCount, 0);
 
+  const chartDescription =
+    chartTopics.length > 0
+      ? `Topic breakdown: ${chartTopics
+          .map((t) => `${t.topic} ${Math.round(t.percentage)}%`)
+          .join(", ")}. ${totalProblems} problems total.`
+      : "No topic data yet.";
+
   return (
-    <div className="glass-card rounded-xl p-6 lg:p-8" style={{ height: "380px" }}>
+    <div className="card-quiet rounded-xl p-6 lg:p-8" style={{ height: "380px" }}>
       <div className="flex items-center justify-between mb-4">
         <h4
-          className="text-[12px] tracking-[0.05em] font-medium uppercase text-[#dfc0b6]"
-          style={{ fontFamily: "var(--font-geist-mono)" }}
+          className="tracking-[0.05em] font-medium uppercase text-[color:var(--dash-content-secondary)]"
+          style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-label)" }}
         >
           All Time Topic Breakdown
         </h4>
         {hasMore && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-[11px] text-[#ffb59d] font-bold flex items-center gap-1 hover:underline transition-colors"
-            style={{ fontFamily: "var(--font-geist-mono)" }}
+            className="text-[color:var(--dash-accent-soft)] font-bold flex items-center gap-1 hover:underline transition-colors"
+            style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-tick)" }}
           >
             {expanded ? "View Less" : `View More (${allTopics.length - MAX_VISIBLE})`}
             <span
@@ -116,13 +135,29 @@ export default function TopicDonut({ data }: TopicDonutProps) {
         )}
       </div>
 
-      {/* ── Collapsed: Donut + Topic cards side-by-side ── */}
-      {!expanded ? (
+      {allTopics.length === 0 ? (
+        <div className="flex flex-col items-center justify-center text-center h-[calc(100%-40px)] gap-2">
+          <span className="material-symbols-outlined text-3xl text-[color:var(--dash-content-tertiary)]">
+            donut_large
+          </span>
+          <p
+            className="text-[color:var(--dash-content-secondary)]"
+            style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-body)" }}
+          >
+            No topics solved yet
+          </p>
+        </div>
+      ) : !expanded ? (
+        /* ── Collapsed: Donut + Topic cards side-by-side ── */
         <div className="flex flex-col md:flex-row items-center gap-6 lg:gap-10 h-[calc(100%-40px)]">
           {/* Donut */}
-          <div className="w-36 h-36 lg:w-44 lg:h-44 relative flex-shrink-0">
-            <div className="absolute inset-0 rounded-full border-[12px] border-white/5" />
-            <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100">
+          <div
+            className="w-36 h-36 lg:w-44 lg:h-44 relative flex-shrink-0"
+            role="img"
+            aria-label={chartDescription}
+          >
+            <div className="absolute inset-0 rounded-full border-[12px] border-[color:var(--dash-surface-sunken)]" />
+            <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100" aria-hidden="true">
               {segments.map((seg, i) => (
                 <circle
                   key={seg.topic}
@@ -138,19 +173,21 @@ export default function TopicDonut({ data }: TopicDonutProps) {
             </svg>
           </div>
 
-          {/* Topic Cards */}
+          {/* Topic Cards — these double as the chart's direct labels */}
           <div className="flex-1 grid grid-cols-2 gap-3 auto-rows-min">
             {chartTopics.map((t, i) => {
-              const textColor: string =
-                t.topic === "Others"
-                  ? "text-[#a78b82]"
-                  : TOPIC_TEXT_COLORS[i % TOPIC_TEXT_COLORS.length];
+              const textColor: string = t.topic === "Others" ? OTHERS_COLOR : topicColor(i);
               return (
-                <div key={t.topic} className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                  <span className="text-[10px] text-[#dfc0b6] uppercase block">{t.topic}</span>
+                <div key={t.topic} className="p-2.5 rounded-lg" style={{ background: "var(--dash-surface-sunken)", border: "1px solid var(--dash-border-subtle)" }}>
                   <span
-                    className={`text-lg font-semibold ${textColor}`}
-                    style={{ fontFamily: "var(--font-geist-sans)" }}
+                    className="uppercase block text-[color:var(--dash-content-secondary)]"
+                    style={{ fontSize: "var(--dash-text-caption)" }}
+                  >
+                    {t.topic}
+                  </span>
+                  <span
+                    className="text-lg font-semibold"
+                    style={{ fontFamily: "var(--font-geist-sans)", color: textColor }}
                   >
                     {t.problemCount}
                   </span>
@@ -163,9 +200,13 @@ export default function TopicDonut({ data }: TopicDonutProps) {
         /* ── Expanded: Centered donut with compact labels below ── */
         <div className="flex flex-col items-center h-[calc(100%-40px)] overflow-hidden">
           {/* Smaller centered donut */}
-          <div className="w-28 h-28 relative flex-shrink-0">
-            <div className="absolute inset-0 rounded-full border-[8px] border-white/5" />
-            <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100">
+          <div
+            className="w-28 h-28 relative flex-shrink-0"
+            role="img"
+            aria-label={chartDescription}
+          >
+            <div className="absolute inset-0 rounded-full border-[8px] border-[color:var(--dash-surface-sunken)]" />
+            <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100" aria-hidden="true">
               {segments.map((seg, i) => (
                 <circle
                   key={seg.topic}
@@ -185,10 +226,7 @@ export default function TopicDonut({ data }: TopicDonutProps) {
           <div className="flex-1 w-full mt-3 overflow-y-auto pr-1 custom-scrollbar">
             <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
               {chartTopics.map((t, i) => {
-                const dotColor: string =
-                  t.topic === "Others"
-                    ? OTHERS_COLOR
-                    : TOPIC_COLORS[i % TOPIC_COLORS.length];
+                const dotColor: string = t.topic === "Others" ? OTHERS_COLOR : topicColor(i);
                 return (
                   <div key={t.topic} className="flex items-center gap-1.5 min-w-0">
                     <div
@@ -196,14 +234,14 @@ export default function TopicDonut({ data }: TopicDonutProps) {
                       style={{ backgroundColor: dotColor }}
                     />
                     <span
-                      className="text-[10px] text-[#dfc0b6] truncate"
-                      style={{ fontFamily: "var(--font-geist-mono)" }}
+                      className="text-[color:var(--dash-content-secondary)] truncate"
+                      style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-tick)" }}
                     >
                       {t.topic}
                     </span>
                     <span
-                      className="text-[10px] font-semibold text-[#e5e1e4] ml-auto flex-shrink-0"
-                      style={{ fontFamily: "var(--font-geist-mono)" }}
+                      className="font-semibold ml-auto flex-shrink-0"
+                      style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-tick)" }}
                     >
                       {t.problemCount}
                     </span>
@@ -213,6 +251,26 @@ export default function TopicDonut({ data }: TopicDonutProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Accessible data table — same information as the donut, for screen
+          readers and anyone who wants exact values without hovering. */}
+      {allTopics.length > 0 && (
+        <table className="sr-only">
+          <caption>Topic breakdown, {accuracy}% overall accuracy</caption>
+          <thead>
+            <tr><th>Topic</th><th>Problems solved</th><th>Share</th></tr>
+          </thead>
+          <tbody>
+            {allTopics.map((t) => (
+              <tr key={t.topic}>
+                <td>{t.topic}</td>
+                <td>{t.problemCount}</td>
+                <td>{Math.round(t.percentage)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

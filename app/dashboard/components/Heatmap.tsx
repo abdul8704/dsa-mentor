@@ -7,12 +7,15 @@ interface HeatmapProps {
   data?: HeatmapDay[] | null;
 }
 
+// Sequential ramp (light → dark maps to low → high) in a single hue, per the
+// chart-color rules — not the categorical palette, since intensity here is
+// ordered, not a set of distinct categories.
 const INTENSITY_COLORS = [
-  "bg-white/[0.04]",
-  "bg-[rgba(244,113,68,0.3)]",
-  "bg-[rgba(244,113,68,0.5)]",
-  "bg-[rgba(244,113,68,0.72)]",
-  "bg-[#f47144]",
+  "var(--dash-surface-sunken)",
+  "color-mix(in srgb, var(--dash-accent) 30%, transparent)",
+  "color-mix(in srgb, var(--dash-accent) 50%, transparent)",
+  "color-mix(in srgb, var(--dash-accent) 72%, transparent)",
+  "var(--dash-accent)",
 ];
 
 const MONTH_NAMES = [
@@ -103,11 +106,8 @@ function buildMonthGrid(days: HeatmapDay[]): MonthGroup[] {
 
     if (weekMonth !== currentMonth) {
       // Start new month group
-      // But also get the year from the first real day for the label
-      const firstReal = week.find((c) => c !== null);
-      const year = firstReal ? new Date(firstReal.date).getFullYear() : 0;
       const label = MONTH_NAMES[weekMonth] ?? "";
-      groups.push({ label: `${label}`, weeks: [week] });
+      groups.push({ label, weeks: [week] });
       currentMonth = weekMonth;
     } else {
       groups[groups.length - 1].weeks.push(week);
@@ -123,13 +123,19 @@ export default function Heatmap({ data }: HeatmapProps) {
   const [showInfo, setShowInfo] = useState(false);
   const infoRef = useRef<HTMLDivElement>(null);
 
+  const activeDays = heatmapData.filter((d) => d.intensity > 0).length;
+  const totalSolved = heatmapData.reduce((sum, d) => sum + d.count, 0);
+  const rangeStart = heatmapData[0]?.date;
+  const rangeEnd = heatmapData[heatmapData.length - 1]?.date;
+  const chartDescription = `Activity heatmap from ${rangeStart} to ${rangeEnd}: ${totalSolved} problems solved across ${activeDays} active days`;
+
   return (
     <section className="glass-card rounded-xl p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <div className="flex items-center gap-2">
           <h3
-            className="text-[24px] lg:text-[32px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#e5e1e4]"
+            className="text-[24px] lg:text-[32px] font-semibold leading-[1.2] tracking-[-0.02em] text-[color:var(--dash-content-primary)]"
             style={{ fontFamily: "var(--font-geist-sans)" }}
           >
             Heatmap
@@ -140,15 +146,15 @@ export default function Heatmap({ data }: HeatmapProps) {
               aria-label="Heatmap accuracy info"
               onClick={() => setShowInfo((v) => !v)}
               onBlur={() => setShowInfo(false)}
-              className="flex items-center justify-center w-5 h-5 rounded-full border border-white/20 text-[11px] text-[#dfc0b6] hover:bg-white/10 hover:text-[#e5e1e4] transition-colors cursor-pointer"
-              style={{ fontFamily: "var(--font-geist-mono)" }}
+              className="flex items-center justify-center w-5 h-5 rounded-full text-[color:var(--dash-content-secondary)] hover:bg-white/10 hover:text-[color:var(--dash-content-primary)] transition-colors cursor-pointer"
+              style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-tick)", border: "1px solid var(--dash-border-strong)" }}
             >
               i
             </button>
             {showInfo && (
               <div
-                className="absolute left-0 top-7 z-20 w-64 rounded-lg border border-white/10 bg-[#1a1416] p-3 text-[11px] leading-relaxed text-[#dfc0b6] shadow-xl"
-                style={{ fontFamily: "var(--font-geist-mono)" }}
+                className="absolute left-0 top-7 z-20 w-64 rounded-lg p-3 leading-relaxed text-[color:var(--dash-content-secondary)] shadow-xl"
+                style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-tick)", background: "#1a1416", border: "1px solid var(--dash-border-subtle)" }}
               >
                 LeetCode doesn&apos;t expose complete submission history through its public data, so we can&apos;t always retrieve every solved problem. As a result, this heatmap may not perfectly match the one on your LeetCode profile.
               </div>
@@ -156,20 +162,20 @@ export default function Heatmap({ data }: HeatmapProps) {
           </div>
         </div>
         <div
-          className="flex gap-2 text-[10px] text-[#dfc0b6] items-center"
-          style={{ fontFamily: "var(--font-geist-mono)" }}
+          className="flex gap-2 items-center text-[color:var(--dash-content-secondary)]"
+          style={{ fontFamily: "var(--font-geist-mono)", fontSize: "var(--dash-text-caption)" }}
         >
           <span>Less</span>
           {INTENSITY_COLORS.map((color, i) => (
-            <div key={i} className={`w-3 h-3 rounded-sm ${color}`} />
+            <div key={i} className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
           ))}
           <span>More</span>
         </div>
       </div>
 
       {/* Heatmap Grid */}
-      <div className="overflow-x-auto flex justify-center">
-        <div className="flex items-start" style={{ minWidth: "fit-content" }}>
+      <div className="overflow-x-auto flex justify-center" role="img" aria-label={chartDescription}>
+        <div className="flex items-start" aria-hidden="true" style={{ minWidth: "fit-content" }}>
           {/* Day-of-week labels column */}
           <div
             className="flex flex-col flex-shrink-0 mr-2"
@@ -180,11 +186,12 @@ export default function Heatmap({ data }: HeatmapProps) {
             {DAY_LABELS.map((label, i) => (
               <div
                 key={i}
-                className="text-[10px] text-[#dfc0b6] flex items-center justify-end"
+                className="flex items-center justify-end text-[color:var(--dash-content-secondary)]"
                 style={{
                   height: `${CELL_SIZE}px`,
                   width: "28px",
                   fontFamily: "var(--font-geist-mono)",
+                  fontSize: "var(--dash-text-caption)",
                 }}
               >
                 {label}
@@ -198,9 +205,10 @@ export default function Heatmap({ data }: HeatmapProps) {
               <div key={gi} className="flex flex-col">
                 {/* Month label — centered over this month's columns */}
                 <div
-                  className="text-[10px] text-[#dfc0b6] text-center"
+                  className="text-center text-[color:var(--dash-content-secondary)]"
                   style={{
                     fontFamily: "var(--font-geist-mono)",
+                    fontSize: "var(--dash-text-caption)",
                     height: `${CELL_SIZE + 4}px`,
                     lineHeight: `${CELL_SIZE + 4}px`,
                   }}
@@ -218,14 +226,11 @@ export default function Heatmap({ data }: HeatmapProps) {
                       {week.map((cell, ci) => (
                         <div
                           key={ci}
-                          className={`rounded-sm transition-all hover:scale-150 hover:z-10 ${
-                            cell
-                              ? `${INTENSITY_COLORS[cell.intensity]} cursor-pointer`
-                              : "bg-transparent"
-                          }`}
+                          className={`rounded-sm transition-all hover:scale-150 hover:z-10 ${cell ? "cursor-pointer" : ""}`}
                           style={{
                             width: `${CELL_SIZE}px`,
                             height: `${CELL_SIZE}px`,
+                            backgroundColor: cell ? INTENSITY_COLORS[cell.intensity] : "transparent",
                           }}
                           title={
                             cell

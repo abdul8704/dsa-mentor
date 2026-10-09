@@ -6,7 +6,7 @@ import { serializeStats } from "@/app/lib/public-api/serializers";
 /**
  * Payload for the desktop widget: today's solves by platform (in the
  * widget's own timezone), the same all-platform totals as the dashboard,
- * and a 7-day series.
+ * and a 7-day series (each day also split by platform).
  *
  * Reads with the service-role client, so every query is scoped to the userId
  * resolved from the widget token.
@@ -38,7 +38,14 @@ export interface WidgetSummary {
     solvedToday: { total: number; platforms: { platform: string; count: number }[] };
     totals: ReturnType<typeof serializeStats>["totals"];
     platforms: ReturnType<typeof serializeStats>["platforms"];
-    last7Days: { date: string; count: number }[];
+    last7Days: { date: string; count: number; platforms: { platform: string; count: number }[] }[];
+}
+
+/** Map of platform -> distinct problems, as a list sorted by count (desc), then name. */
+function platformCounts(byPlatform: Map<string, Set<string>> | undefined) {
+    return [...(byPlatform ?? new Map<string, Set<string>>()).entries()]
+        .map(([platform, set]) => ({ platform, count: set.size }))
+        .sort((a, b) => b.count - a.count || a.platform.localeCompare(b.platform));
 }
 
 export async function buildWidgetSummary(db: SupabaseClient, userId: string, timeZone: string): Promise<WidgetSummary> {
@@ -58,22 +65,18 @@ export async function buildWidgetSummary(db: SupabaseClient, userId: string, tim
     for (let i = 6; i >= 0; i--) days.push(localDate(now - i * DAY_MS, timeZone));
     const today = days[days.length - 1];
 
-    // Distinct problems per local day, and per platform for today.
+    // Distinct problems per local day, overall and per platform.
     const perDay = new Map<string, Set<string>>(days.map((d) => [d, new Set()]));
-    const todayByPlatform = new Map<string, Set<string>>();
+    const perDayByPlatform = new Map<string, Map<string, Set<string>>>(days.map((d) => [d, new Map()]));
     for (const row of (solvedRes.data ?? []) as { problem_id: string; platform: string; solved_at: string }[]) {
         const day = localDate(new Date(row.solved_at), timeZone);
-        perDay.get(day)?.add(row.problem_id);
-        if (day === today) {
-            const platform = (row.platform ?? "unknown").toLowerCase();
-            if (!todayByPlatform.has(platform)) todayByPlatform.set(platform, new Set());
-            todayByPlatform.get(platform)!.add(row.problem_id);
-        }
+        const byPlatform = perDayByPlatform.get(day);
+        if (!byPlatform) continue;
+        perDay.get(day)!.add(row.problem_id);
+        const platform = (row.platform ?? "unknown").toLowerCase();
+        if (!byPlatform.has(platform)) byPlatform.set(platform, new Set());
+        byPlatform.get(platform)!.add(row.problem_id);
     }
-
-    const todayPlatforms = [...todayByPlatform.entries()]
-        .map(([platform, set]) => ({ platform, count: set.size }))
-        .sort((a, b) => b.count - a.count || a.platform.localeCompare(b.platform));
 
     const { totals, platforms } = serializeStats(difficulty, platformStats);
 
@@ -81,9 +84,13 @@ export async function buildWidgetSummary(db: SupabaseClient, userId: string, tim
         user: { name: profile.name, avatarUrl: profile.avatarUrl || null },
         timeZone,
         date: today,
-        solvedToday: { total: perDay.get(today)?.size ?? 0, platforms: todayPlatforms },
+        solvedToday: { total: perDay.get(today)?.size ?? 0, platforms: platformCounts(perDayByPlatform.get(today)) },
         totals,
         platforms,
-        last7Days: days.map((date) => ({ date, count: perDay.get(date)?.size ?? 0 })),
+        last7Days: days.map((date) => ({
+            date,
+            count: perDay.get(date)?.size ?? 0,
+            platforms: platformCounts(perDayByPlatform.get(date)),
+        })),
     };
 }

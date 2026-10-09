@@ -21,11 +21,11 @@ Only SHA-256 hashes of device codes and tokens are stored (`widget_link_codes`, 
   "solvedToday": { "total": 5, "platforms": [{ "platform": "leetcode", "count": 3 }] },
   "totals": { "solved": 812, "easy": 300, "medium": 400, "hard": 112 },
   "platforms": [{ "platform": "leetcode", "solved": 600, "easy": 250, "medium": 290, "hard": 60, "rating": null, "maxRating": null }],
-  "last7Days": [{ "date": "2026-10-03", "count": 4 }]
+  "last7Days": [{ "date": "2026-10-03", "count": 4, "platforms": [{ "platform": "leetcode", "count": 3 }, { "platform": "codeforces", "count": 1 }] }]
 }, "meta": { "servedAt": "…" } }
 ```
 
-`totals`/`platforms` are the same values as the dashboard's difficulty and platform cards. "Today" and `last7Days` are computed in the `tz` the widget sends (UTC if missing or invalid), counting distinct problems.
+`totals`/`platforms` are the same values as the dashboard's difficulty and platform cards. "Today" and `last7Days` are computed in the `tz` the widget sends (UTC if missing or invalid), counting distinct problems. Each `last7Days` entry's `platforms` lists only platforms with at least one solve that day, highest first.
 
 ## Setup
 

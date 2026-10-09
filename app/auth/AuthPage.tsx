@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { getBrowserClient } from "@/app/lib/supabase/browser-client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { POST_AUTH_COOKIE, safeInternalPath } from "@/app/lib/auth/redirect";
 
 type EmailPassword = {
     user: User | null;
@@ -165,9 +166,7 @@ export default function AuthPage({ user }: EmailPassword) {
                     setStatusType("success");
                     // Honor a safe internal ?redirect= target (e.g. an invite link)
                     // so users who arrive via an invite land back on it after login.
-                    const redirect = searchParams.get("redirect");
-                    const safeRedirect = redirect && redirect.startsWith("/") ? redirect : "/dashboard";
-                    router.push(safeRedirect);
+                    router.push(safeInternalPath(searchParams.get("redirect")) ?? "/dashboard");
                 }
             }
             catch(err) {
@@ -184,6 +183,11 @@ export default function AuthPage({ user }: EmailPassword) {
         clearStatus();
         setIsLoading(true);
         try {
+            // OAuth leaves the site, so keep the post-login target in a short-lived
+            // cookie that /auth/callback reads (a query param on redirectTo would
+            // have to be allow-listed in Supabase).
+            const target = safeInternalPath(searchParams.get("redirect"));
+            if (target) document.cookie = `${POST_AUTH_COOKIE}=${encodeURIComponent(target)}; path=/; max-age=600; SameSite=Lax`;
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {

@@ -9,6 +9,7 @@ import { uploadAvatar, removeAvatar } from "../actions/avatar.actions";
 import ConnectCsesForm from "../dashboard/components/ConnectCsesForm";
 import ConnectLeetcodeForm from "../dashboard/components/ConnectLeetcodeForm";
 import PublicApiSettings from "../dashboard/components/PublicApiSettings";
+import ConnectedWidgets from "../dashboard/components/ConnectedWidgets";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -762,6 +763,7 @@ export default function OnboardingForm({
                                 <ConnectLeetcodeForm userId={userId} />
                                 <ConnectCsesForm userId={userId} />
                                 <PublicApiSettings />
+                                <ConnectedWidgets />
                             </div>
                         )}
 

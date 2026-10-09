@@ -38,7 +38,8 @@ export interface WidgetSummary {
     solvedToday: { total: number; platforms: { platform: string; count: number }[] };
     totals: ReturnType<typeof serializeStats>["totals"];
     platforms: ReturnType<typeof serializeStats>["platforms"];
-    last7Days: { date: string; count: number }[];
+    /** One entry per local day; `platforms` lists that day's distinct solves per platform (highest first). */
+    last7Days: { date: string; count: number; platforms: { platform: string; count: number }[] }[];
 }
 
 export async function buildWidgetSummary(db: SupabaseClient, userId: string, timeZone: string): Promise<WidgetSummary> {
@@ -58,22 +59,24 @@ export async function buildWidgetSummary(db: SupabaseClient, userId: string, tim
     for (let i = 6; i >= 0; i--) days.push(localDate(now - i * DAY_MS, timeZone));
     const today = days[days.length - 1];
 
-    // Distinct problems per local day, and per platform for today.
+    // Distinct problems per local day, and per platform within each day.
     const perDay = new Map<string, Set<string>>(days.map((d) => [d, new Set()]));
-    const todayByPlatform = new Map<string, Set<string>>();
+    const perDayPlatform = new Map<string, Map<string, Set<string>>>(days.map((d) => [d, new Map()]));
     for (const row of (solvedRes.data ?? []) as { problem_id: string; platform: string; solved_at: string }[]) {
         const day = localDate(new Date(row.solved_at), timeZone);
-        perDay.get(day)?.add(row.problem_id);
-        if (day === today) {
-            const platform = (row.platform ?? "unknown").toLowerCase();
-            if (!todayByPlatform.has(platform)) todayByPlatform.set(platform, new Set());
-            todayByPlatform.get(platform)!.add(row.problem_id);
-        }
+        const byPlatform = perDayPlatform.get(day);
+        if (!byPlatform) continue;
+        perDay.get(day)!.add(row.problem_id);
+        const platform = (row.platform ?? "unknown").toLowerCase();
+        if (!byPlatform.has(platform)) byPlatform.set(platform, new Set());
+        byPlatform.get(platform)!.add(row.problem_id);
     }
 
-    const todayPlatforms = [...todayByPlatform.entries()]
-        .map(([platform, set]) => ({ platform, count: set.size }))
-        .sort((a, b) => b.count - a.count || a.platform.localeCompare(b.platform));
+    const platformCounts = (day: string) =>
+        [...(perDayPlatform.get(day)?.entries() ?? [])]
+            .map(([platform, set]) => ({ platform, count: set.size }))
+            .sort((a, b) => b.count - a.count || a.platform.localeCompare(b.platform));
+    const todayPlatforms = platformCounts(today);
 
     const { totals, platforms } = serializeStats(difficulty, platformStats);
 
@@ -84,6 +87,6 @@ export async function buildWidgetSummary(db: SupabaseClient, userId: string, tim
         solvedToday: { total: perDay.get(today)?.size ?? 0, platforms: todayPlatforms },
         totals,
         platforms,
-        last7Days: days.map((date) => ({ date, count: perDay.get(date)?.size ?? 0 })),
+        last7Days: days.map((date) => ({ date, count: perDay.get(date)?.size ?? 0, platforms: platformCounts(date) })),
     };
 }

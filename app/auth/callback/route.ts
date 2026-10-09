@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/app/lib/supabase/server-client"
+import { POST_AUTH_COOKIE, safeInternalPath } from "@/app/lib/auth/redirect";
 
 export async function GET(req: NextRequest){
     const { searchParams, origin } = new URL(req.url)
@@ -52,6 +53,12 @@ export async function GET(req: NextRequest){
         .eq("user_id", user.id)
         .maybeSingle();
 
-    const destination = profile?.onboarding_completed ? "/dashboard" : "/onboarding";
-    return NextResponse.redirect(`${origin}${destination}`);
+    // Honor a safe post-login target set before the OAuth round-trip (e.g. /link?code=…).
+    const stored = req.cookies.get(POST_AUTH_COOKIE)?.value;
+    const target = safeInternalPath(stored ? decodeURIComponent(stored) : null);
+
+    const destination = profile?.onboarding_completed ? (target ?? "/dashboard") : "/onboarding";
+    const response = NextResponse.redirect(`${origin}${destination}`);
+    if (stored) response.cookies.delete(POST_AUTH_COOKIE);
+    return response;
 }

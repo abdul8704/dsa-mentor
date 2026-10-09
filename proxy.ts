@@ -34,7 +34,10 @@ export async function proxy(req: NextRequest) {
 
     if (!user) {
         if (!isPublic) {
-            return NextResponse.redirect(new URL("/auth", req.url));
+            // Remember where the user was headed (e.g. /link?code=…) so sign-in returns them there.
+            const dest = new URL("/auth", req.url);
+            dest.searchParams.set("redirect", path + req.nextUrl.search);
+            return NextResponse.redirect(dest);
         }
 
         return NextResponse.next();
@@ -66,8 +69,9 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
     matcher: [
-        // api/public is the anonymous, opt-in public API: no session lookup
-        // or auth redirects (see app/api/public/v1/).
-        "/((?!_next/static|_next/image|favicon.ico|api/public|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+        // api/public is the anonymous, opt-in public API and api/widget is the
+        // token-authenticated widget API: no session lookup or auth redirects
+        // (see app/api/public/v1/ and app/api/widget/v1/).
+        "/((?!_next/static|_next/image|favicon.ico|api/public|api/widget|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
     ],
 };

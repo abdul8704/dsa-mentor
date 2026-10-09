@@ -2,6 +2,7 @@
 
 import type { StreakData } from "@/app/lib/types/analytics";
 import Last7DaysChart from "./Last7DaysChart";
+import PlatformBreakdown from "./PlatformBreakdown";
 
 interface StreakStatsClientProps {
   streak?: StreakData | null;
@@ -15,10 +16,13 @@ const DEFAULT_STREAK: StreakData = {
   currentStreak: 124,
   longestStreak: 218,
   solvedToday: 14,
+  solvedTodayByPlatform: { leetcode: 9, codeforces: 3, atcoder: 0, cses: 2 },
   last7DaysSolved: 47,
   last7DaysChange: 12,
   last7DaysBreakdown: [4, 6, 8, 7, 9, 6, 7],
+  last7DaysByPlatform: { leetcode: 25, codeforces: 12, atcoder: 4, cses: 6 },
   solvedThisMonth: 89,
+  last30DaysByPlatform: { leetcode: 50, codeforces: 20, atcoder: 7, cses: 12 },
   solvedPrev30Days: 72,
   contestsThisWeek: 3,
 };
@@ -110,6 +114,7 @@ export default function StreakStatsClient({ streak, contestsAttended, contestsTo
             </span>
             {Math.abs(s.last7DaysChange)}%
           </span>
+          <PlatformBreakdown counts={s.last7DaysByPlatform} className="mt-1.5" />
         </div>
 
         {/* Right ~70%: Line chart */}
@@ -167,6 +172,7 @@ export default function StreakStatsClient({ streak, contestsAttended, contestsTo
                 );
               })()}
             </div>
+            <PlatformBreakdown counts={s.last30DaysByPlatform} className="mt-1" />
           </div>
         </div>
 

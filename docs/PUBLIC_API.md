@@ -132,10 +132,13 @@ export type ErrorCode = "not_found" | "widget_not_public" | "invalid_request"
 export type Platform = "leetcode" | "codeforces" | "atcoder" | "cses";
 
 export interface ProfileWidget { handle: string; name: string; bio: string | null; avatarUrl: string | null }
+/** Solve counts per platform; every Platform is present (0 if none). */
+export type PlatformCounts = Record<Platform, number>;
 export interface StreakWidget {
   currentStreak: number; longestStreak: number; solvedToday: number;
-  last7Days: { solved: number; changePercent: number; daily: { date: string; count: number }[] };
-  last30Days: { solved: number; previous30Days: number };
+  solvedTodayByPlatform: PlatformCounts;
+  last7Days: { solved: number; byPlatform: PlatformCounts; changePercent: number; daily: { date: string; count: number }[] };
+  last30Days: { solved: number; byPlatform: PlatformCounts; previous30Days: number };
   contestsLast7Days: number;
 }
 export interface HeatmapWidget {
@@ -319,9 +322,11 @@ The `data` for each widget:
 {
   "currentStreak": 5,
   "longestStreak": 9,
-  "solvedToday": 1,
+  "solvedToday": 5,
+  "solvedTodayByPlatform": { "leetcode": 3, "codeforces": 0, "atcoder": 0, "cses": 2 },
   "last7Days": {
-    "solved": 7,
+    "solved": 11,
+    "byPlatform": { "leetcode": 6, "codeforces": 2, "atcoder": 0, "cses": 3 },
     "changePercent": 17,
     "daily": [
       { "date": "2026-10-01", "count": 1 },
@@ -330,10 +335,14 @@ The `data` for each widget:
       { "date": "2026-10-04", "count": 1 },
       { "date": "2026-10-05", "count": 1 },
       { "date": "2026-10-06", "count": 1 },
-      { "date": "2026-10-07", "count": 1 }
+      { "date": "2026-10-07", "count": 5 }
     ]
   },
-  "last30Days": { "solved": 30, "previous30Days": 22 },
+  "last30Days": {
+    "solved": 30,
+    "byPlatform": { "leetcode": 18, "codeforces": 5, "atcoder": 2, "cses": 5 },
+    "previous30Days": 22
+  },
   "contestsLast7Days": 1
 }
 ```
@@ -343,10 +352,13 @@ The `data` for each widget:
 | `currentStreak`          | number | Consecutive days with ≥1 accepted solve, including today if solved today    |
 | `longestStreak`          | number | Longest streak ever                                                         |
 | `solvedToday`            | number | Problems accepted today (UTC)                                               |
+| `solvedTodayByPlatform`  | object | `solvedToday` split by platform: `leetcode`, `codeforces`, `atcoder`, `cses` (0 when none) |
 | `last7Days.solved`       | number | Solves in the 7 days ending today                                           |
+| `last7Days.byPlatform`   | object | `last7Days.solved` split by platform, same keys as above                    |
 | `last7Days.changePercent`| number | % change vs the 7 days before (100 when the previous week was 0)            |
 | `last7Days.daily`        | array  | Exactly 7 entries, oldest first, last one is today                          |
 | `last30Days.solved`      | number | Solves in the last 30 days                                                  |
+| `last30Days.byPlatform`  | object | `last30Days.solved` split by platform, same keys as above                   |
 | `last30Days.previous30Days` | number | Solves in days 31–60 ago                                                 |
 | `contestsLast7Days`      | number | Rated contests taken part in during the last 7 days                         |
 
@@ -664,4 +676,6 @@ Machine-readable entry point: `GET /api/public/v1` lists every endpoint and widg
 
 ---
 
-_Changelog_ — **v1 (2026-10-07):** first release.
+_Changelog_ — **v1 (2026-10-07):** first release. **2026-10-09:** the `streak`
+widget gained `solvedTodayByPlatform`, `last7Days.byPlatform` and
+`last30Days.byPlatform` (additive; existing fields unchanged).

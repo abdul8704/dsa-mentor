@@ -9,16 +9,25 @@ export interface UserProfile {
   level: number;
 }
 
+/**
+ * Solve counts keyed by platform. Every supported platform is present (0 when
+ * nothing was solved there), so the values always sum to the matching total.
+ */
+export type PlatformCounts = Record<string, number>;
+
 export interface StreakData {
   currentStreak: number;
   longestStreak: number;
   solvedToday: number;
+  solvedTodayByPlatform: PlatformCounts;
   last7DaysSolved: number;
   /** Percentage change vs previous 7 days (positive = up, negative = down) */
   last7DaysChange: number;
   /** Per-day solved count for last 7 days (index 0 = 6 days ago, index 6 = today) */
   last7DaysBreakdown: number[];
+  last7DaysByPlatform: PlatformCounts;
   solvedThisMonth: number;
+  last30DaysByPlatform: PlatformCounts;
   solvedPrev30Days: number;
   contestsThisWeek: number;
 }

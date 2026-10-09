@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import type { UserProfile, StreakData } from "@/app/lib/types/analytics";
+import PlatformBreakdown from "./PlatformBreakdown";
 
 interface ProfileCardProps {
   profile?: UserProfile | null;
@@ -18,9 +19,10 @@ const DEFAULT_PROFILE: UserProfile = {
   level: 7,
 };
 
-const DEFAULT_STREAK: Pick<StreakData, "currentStreak" | "solvedToday"> = {
+const DEFAULT_STREAK: Pick<StreakData, "currentStreak" | "solvedToday" | "solvedTodayByPlatform"> = {
   currentStreak: 124,
   solvedToday: 14,
+  solvedTodayByPlatform: { leetcode: 9, codeforces: 3, atcoder: 0, cses: 2 },
 };
 
 export default function ProfileCardClient({ profile, streak, userId }: ProfileCardProps) {
@@ -101,6 +103,7 @@ export default function ProfileCardClient({ profile, streak, userId }: ProfileCa
             <span className="text-[24px] lg:text-[32px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#4edea3]" style={{ fontFamily: "var(--font-geist-sans)" }}>
               {s.solvedToday}
             </span>
+            <PlatformBreakdown counts={s.solvedTodayByPlatform} className="mt-1" />
           </div>
         </div>
 

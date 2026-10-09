@@ -48,13 +48,16 @@ export function serializeStreak(s: StreakData) {
         currentStreak: s.currentStreak,
         longestStreak: s.longestStreak,
         solvedToday: s.solvedToday,
+        solvedTodayByPlatform: s.solvedTodayByPlatform,
         last7Days: {
             solved: s.last7DaysSolved,
+            byPlatform: s.last7DaysByPlatform,
             changePercent: s.last7DaysChange,
             daily: s.last7DaysBreakdown.map((count, i) => ({ date: isoDaysAgo(6 - i), count })),
         },
         last30Days: {
             solved: s.solvedThisMonth,
+            byPlatform: s.last30DaysByPlatform,
             previous30Days: s.solvedPrev30Days,
         },
         contestsLast7Days: s.contestsThisWeek,

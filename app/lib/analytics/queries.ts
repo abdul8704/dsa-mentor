@@ -16,6 +16,7 @@ import type {
   SolvedProblemsFilters,
   PaginatedSolvedProblems,
   DashboardData,
+  PlatformCounts,
 } from "@/app/lib/types/analytics";
 
 // ─── Helper: date strings ───────────────────────────────────────────────────
@@ -57,6 +58,55 @@ const PLATFORM_COLOR_MAP: Record<string, "primary" | "tertiary" | "secondary"> =
 
 /** Only these platforms are supported by onboarding/refresh — anything else (e.g. stray "github" rows) is ignored. */
 const SUPPORTED_PLATFORMS = ["leetcode", "codeforces", "atcoder", "cses"] as const;
+
+/** Zeroed counts for every supported platform. */
+function emptyPlatformCounts(): PlatformCounts {
+  return Object.fromEntries(SUPPORTED_PLATFORMS.map((p) => [p, 0]));
+}
+
+/**
+ * Per-platform solve counts for today, the last 7 days and the last 30 days,
+ * from one scan of the user's last 30 days of `solved_problems`. Paged because
+ * a bulk import can put more than PostgREST's 1000-row cap in that window.
+ */
+async function getPlatformCountsByWindow(
+  supabase: SupabaseClient,
+  userId: string,
+  windows: { today: string; last7From: string; last30From: string }
+): Promise<{ today: PlatformCounts; last7: PlatformCounts; last30: PlatformCounts }> {
+  const today = emptyPlatformCounts();
+  const last7 = emptyPlatformCounts();
+  const last30 = emptyPlatformCounts();
+
+  const PAGE_SIZE = 1000;
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("solved_problems")
+      .select("platform, solved_date")
+      .eq("user_id", userId)
+      .gte("solved_date", windows.last30From)
+      .order("solved_date", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error("Platform counts query error:", error);
+      break;
+    }
+
+    for (const row of data ?? []) {
+      // Not limited to SUPPORTED_PLATFORMS, so each breakdown always sums to
+      // its total count (which doesn't filter by platform either).
+      const p: string = row.platform;
+      last30[p] = (last30[p] ?? 0) + 1;
+      if (row.solved_date >= windows.last7From) last7[p] = (last7[p] ?? 0) + 1;
+      if (row.solved_date === windows.today) today[p] = (today[p] ?? 0) + 1;
+    }
+
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+
+  return { today, last7, last30 };
+}
 
 // ─── Queries ────────────────────────────────────────────────────────────────
 //
@@ -120,6 +170,7 @@ export async function getStreakData(supabase: SupabaseClient, userId: string): P
     prev30Result,
     breakdownResult,
     contestsResult,
+    platformCounts,
   ] = await Promise.all([
     // 1. Current & longest streak from user-streak
     supabase
@@ -178,6 +229,13 @@ export async function getStreakData(supabase: SupabaseClient, userId: string): P
       .select("contest_id", { count: "exact", head: true })
       .eq("user_id", userId)
       .gte("date", sevenDaysAgo),
+
+    // 9. Per-platform counts for today / last 7 / last 30 days
+    getPlatformCountsByWindow(supabase, userId, {
+      today,
+      last7From: sixDaysAgo,
+      last30From: thirtyDaysAgo,
+    }),
   ]);
 
   // ── Extract values with safe defaults ──
@@ -228,10 +286,13 @@ export async function getStreakData(supabase: SupabaseClient, userId: string): P
     currentStreak,
     longestStreak,
     solvedToday,
+    solvedTodayByPlatform: platformCounts.today,
     last7DaysSolved,
     last7DaysChange,
     last7DaysBreakdown,
+    last7DaysByPlatform: platformCounts.last7,
     solvedThisMonth,
+    last30DaysByPlatform: platformCounts.last30,
     solvedPrev30Days,
     contestsThisWeek,
   };

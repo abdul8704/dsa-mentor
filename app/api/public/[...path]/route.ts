@@ -1,8 +1,8 @@
 import { preflight, publicError } from "@/app/lib/public-api/http";
 
 /**
- * Catch-all for unknown /api/public/* paths. Without it, next.config.ts's
- * `/api/:path*` rewrite would forward them to the worker.
+ * Catch-all for unknown /api/public/* paths, so they get the API's JSON
+ * error envelope instead of the app's HTML 404 page.
  */
 function notFound() {
     return publicError(404, "not_found", "Unknown endpoint. See GET /api/public/v1 for the list of endpoints.");

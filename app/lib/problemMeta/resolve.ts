@@ -5,6 +5,7 @@ import type { Database } from "@/types/db";
 import { parseProblemUrl, type ParsedProblem } from "./problemUrl";
 import { fetchJson, fetchText, cached } from "./httpClient";
 import { difficultyMap } from "./difficulty";
+import { buildCsesDifficultyIndex } from "./csesDifficulty";
 
 export type ProblemEntry = Database["public"]["Tables"]["problems"]["Insert"];
 
@@ -329,15 +330,17 @@ async function fetchCsesMeta(parsed: Extract<ParsedProblem, { platform: "cses" }
         throw new Error(`CSES problem "${parsed.taskId}" not found.`);
     }
 
-    // Same solve-rate-as-difficulty heuristic as the worker's
-    // utils/dbHelper.ts uses when ingesting a mentee's own solves.
-    const solveRatePercent = info.attemptedBy > 0 ? Math.round((info.solvedBy / info.attemptedBy) * 100) : 100;
+    // Same classifier the worker uses when ingesting a mentee's own solves;
+    // it ranks within the section, so it needs the whole catalog.
+    const difficultyByTask = buildCsesDifficultyIndex(
+        [...catalog].map(([taskId, t]) => ({ taskId, category: t.category, solvedBy: t.solvedBy }))
+    );
 
     return {
         problem_id: parsed.problem_id,
         platform: "cses",
         title: info.name,
-        difficulty: difficultyMap("cses", solveRatePercent),
+        difficulty: difficultyByTask.get(Number(parsed.taskId)) ?? "unknown",
         rating: 0,
         tags: [info.category.toLowerCase()],
     };

@@ -57,11 +57,18 @@ public profile, and even then only the widgets they tick are shared.
 6. The card then shows your URLs, for example
    `https://dsa-mentor-seven.vercel.app/api/public/v1/users/<handle>/dashboard`.
 
+**Public page:** the same switch also publishes a read-only copy of your
+dashboard at `/users/<handle>` (for example
+`https://algomentor.abdul-aziz.dev/users/<handle>`), which anyone can open
+without signing in. It shows exactly the widgets you share and nothing else;
+the Settings card links to it.
+
 **Turning it off:** untick the switch and save. Our own servers stop serving
 your data immediately. Copies already held by the CDN or by a visitor's
 browser expire within 5 minutes.
 
-**Hiding one widget:** untick it and save. It then returns `404 widget_not_public`.
+**Hiding one widget:** untick it and save. It then returns `404 widget_not_public`
+and disappears from your public page.
 
 **Changing your handle:** the old handle stops working immediately (after CDN
 expiry) and is free for someone else to claim. Update any site that uses it.
@@ -678,4 +685,6 @@ Machine-readable entry point: `GET /api/public/v1` lists every endpoint and widg
 
 _Changelog_ — **v1 (2026-10-07):** first release. **2026-10-09:** the `streak`
 widget gained `solvedTodayByPlatform`, `last7Days.byPlatform` and
-`last30Days.byPlatform` (additive; existing fields unchanged).
+`last30Days.byPlatform` (additive; existing fields unchanged). **2026-10-13:**
+the public profile switch also publishes a read-only dashboard page at
+`/users/<handle>`.

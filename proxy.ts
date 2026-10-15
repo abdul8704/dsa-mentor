@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/app/lib/supabase/server-client";
 
-const PUBLIC_ROUTES = ["/", "/auth", "/invite"];
+// /users/<handle> is the opt-in public dashboard (app/users/[handle]/page.tsx).
+const PUBLIC_ROUTES = ["/", "/auth", "/invite", "/users"];
 const AUTH_CALLBACK_PREFIX = "/auth/callback";
 
 function isPublicRoute(path: string): boolean {

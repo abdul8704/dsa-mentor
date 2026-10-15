@@ -72,6 +72,16 @@ export default async function MenteeDetailPage({ params }: { params: Promise<{ m
                 Back to mentees
             </Link>
 
+            {isMentorViewingOther && (
+                <Link
+                    href={`/dashboard/goals?user=${menteeId}`}
+                    className="inline-flex items-center gap-1 text-[13px] text-[#dfc0b6] hover:text-[#ffb59d] transition-colors w-fit"
+                >
+                    <span className="material-symbols-outlined text-[18px]">flag</span>
+                    View and set goals
+                </Link>
+            )}
+
             {/* Exact mirror of the mentee's own dashboard — same components, same order. */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>

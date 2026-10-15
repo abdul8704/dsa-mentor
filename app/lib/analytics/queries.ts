@@ -73,8 +73,15 @@ async function getPlatformCountsByWindow(
   supabase: SupabaseClient,
   userId: string,
   windows: { today: string; last7From: string; last30From: string }
-): Promise<{ today: PlatformCounts; last7: PlatformCounts; last30: PlatformCounts }> {
+): Promise<{
+  today: PlatformCounts;
+  last7: PlatformCounts;
+  last30: PlatformCounts;
+  /** Per-platform counts keyed by solved_date, for dates inside the last-7 window. */
+  last7ByDate: Record<string, PlatformCounts>;
+}> {
   const today = emptyPlatformCounts();
+  const last7ByDate: Record<string, PlatformCounts> = {};
   const last7 = emptyPlatformCounts();
   const last30 = emptyPlatformCounts();
 
@@ -98,14 +105,18 @@ async function getPlatformCountsByWindow(
       // its total count (which doesn't filter by platform either).
       const p: string = row.platform;
       last30[p] = (last30[p] ?? 0) + 1;
-      if (row.solved_date >= windows.last7From) last7[p] = (last7[p] ?? 0) + 1;
+      if (row.solved_date >= windows.last7From) {
+        last7[p] = (last7[p] ?? 0) + 1;
+        const day = (last7ByDate[row.solved_date] ??= {});
+        day[p] = (day[p] ?? 0) + 1;
+      }
       if (row.solved_date === windows.today) today[p] = (today[p] ?? 0) + 1;
     }
 
     if (!data || data.length < PAGE_SIZE) break;
   }
 
-  return { today, last7, last30 };
+  return { today, last7, last30, last7ByDate };
 }
 
 // ─── Queries ────────────────────────────────────────────────────────────────
@@ -277,6 +288,12 @@ export async function getStreakData(supabase: SupabaseClient, userId: string): P
     }
   }
 
+  // Per-day platform split, aligned with last7DaysBreakdown (index 6 = today).
+  const last7DaysBreakdownByPlatform: PlatformCounts[] = Array.from(
+    { length: 7 },
+    (_, i) => platformCounts.last7ByDate[daysAgoISO(6 - i)] ?? {}
+  );
+
   // Log any errors for debugging
   if (streakResult.error) console.error("Streak query error:", streakResult.error);
   if (solvedTodayResult.error) console.error("Solved today error:", solvedTodayResult.error);
@@ -290,6 +307,7 @@ export async function getStreakData(supabase: SupabaseClient, userId: string): P
     last7DaysSolved,
     last7DaysChange,
     last7DaysBreakdown,
+    last7DaysBreakdownByPlatform,
     last7DaysByPlatform: platformCounts.last7,
     solvedThisMonth,
     last30DaysByPlatform: platformCounts.last30,

@@ -137,7 +137,7 @@ export default function Last7DaysChart({ breakdown }: { breakdown: number[] }) {
               style={{
                 left: `${points[hoveredIndex].x}%`,
                 top: `${Math.max(points[hoveredIndex].y - 8, 0)}%`,
-                background: "rgba(19,19,21,0.92)",
+                background: "var(--dash-surface-raised)",
                 borderColor: "color-mix(in srgb, var(--dash-feedback-success) 35%, transparent)",
                 color: "var(--dash-feedback-success)",
                 fontFamily: MONO,

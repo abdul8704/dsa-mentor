@@ -17,8 +17,8 @@ const PLATFORM_SHORT: Record<string, string> = { leetcode: "LC", codeforces: "CF
 const STATUS_STYLE: Record<GoalStatus, { label: string; color: string; highlight: boolean }> = {
     overdue: { label: "Overdue", color: "var(--dash-feedback-danger)", highlight: true },
     "due-soon": { label: "Due soon", color: "var(--dash-feedback-warning)", highlight: true },
-    active: { label: "In progress", color: "#ffb59d", highlight: false },
-    upcoming: { label: "Upcoming", color: "#dfc0b6", highlight: false },
+    active: { label: "In progress", color: "var(--dash-accent-soft)", highlight: false },
+    upcoming: { label: "Upcoming", color: "var(--dash-content-secondary)", highlight: false },
     completed: { label: "Completed", color: "var(--dash-feedback-success)", highlight: false },
 };
 
@@ -68,10 +68,10 @@ export default function GoalsClient({ goals, owners, ownerId }: GoalsClientProps
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4">
                 <div className="flex-1">
-                    <h1 className="text-[28px] lg:text-[32px] font-semibold tracking-[-0.02em] text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-sans)" }}>
+                    <h1 className="text-[28px] lg:text-[32px] font-semibold tracking-[-0.02em] text-[color:var(--dash-content-primary)]" style={{ fontFamily: "var(--font-geist-sans)" }}>
                         {isMine ? "Your Goals" : `${owner?.name}'s Goals`}
                     </h1>
-                    <p className="text-[#dfc0b6] opacity-80 mt-1">
+                    <p className="text-[color:var(--dash-content-secondary)] opacity-80 mt-1">
                         {open.length} open · {done.length} completed · progress updates after each sync
                     </p>
                 </div>
@@ -96,7 +96,7 @@ export default function GoalsClient({ goals, owners, ownerId }: GoalsClientProps
                     <button
                         type="button"
                         onClick={() => setEditing("new")}
-                        className="inline-flex items-center gap-1 py-2 px-4 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all whitespace-nowrap"
+                        className="inline-flex items-center gap-1 py-2 px-4 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all whitespace-nowrap"
                     >
                         <span className="material-symbols-outlined text-[18px]">add</span>
                         New goal
@@ -104,13 +104,13 @@ export default function GoalsClient({ goals, owners, ownerId }: GoalsClientProps
                 </div>
             </div>
 
-            {message && <p className="text-[13px] text-[#4edea3]">{message}</p>}
+            {message && <p className="text-[13px] text-[color:var(--dash-feedback-success)]">{message}</p>}
 
             {goals.length === 0 ? (
                 <div className="glass-card rounded-xl p-12 flex flex-col items-center text-center gap-3">
-                    <span className="material-symbols-outlined text-[48px] text-[#ffb59d] opacity-70">flag</span>
-                    <p className="text-[18px] font-semibold text-[#e5e1e4]">No goals yet</p>
-                    <p className="text-[#dfc0b6] opacity-80 max-w-md">
+                    <span className="material-symbols-outlined text-[48px] text-[color:var(--dash-accent-soft)] opacity-70">flag</span>
+                    <p className="text-[18px] font-semibold text-[color:var(--dash-content-primary)]">No goals yet</p>
+                    <p className="text-[color:var(--dash-content-secondary)] opacity-80 max-w-md">
                         Set a target like &ldquo;solve 18 new LeetCode problems this week&rdquo; or pick problems to revise
                         by a date. Progress fills in by itself as solves sync.
                     </p>
@@ -165,7 +165,7 @@ export default function GoalsClient({ goals, owners, ownerId }: GoalsClientProps
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div>
-            <p className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70 mb-2" style={{ fontFamily: "var(--font-geist-mono)" }}>
+            <p className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70 mb-2" style={{ fontFamily: "var(--font-geist-mono)" }}>
                 {title}
             </p>
             <div className="space-y-3">{children}</div>
@@ -175,7 +175,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 
 function Badge({ children }: { children: React.ReactNode }) {
     return (
-        <span className="inline-flex items-center rounded-md bg-white/5 px-2 py-0.5 text-[11px] text-[#dfc0b6]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+        <span className="inline-flex items-center rounded-md bg-[color:var(--dash-surface-sunken)] px-2 py-0.5 text-[11px] text-[color:var(--dash-content-secondary)]" style={{ fontFamily: "var(--font-geist-mono)" }}>
             {children}
         </span>
     );
@@ -215,7 +215,7 @@ function GoalCard({
                         <span className="material-symbols-outlined text-[20px]" style={{ color: style.color }}>
                             {isRevise ? "history" : "flag"}
                         </span>
-                        <h3 className="text-[17px] font-semibold text-[#e5e1e4] break-words">{goal.name}</h3>
+                        <h3 className="text-[17px] font-semibold text-[color:var(--dash-content-primary)] break-words">{goal.name}</h3>
                         <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: style.color, fontFamily: "var(--font-geist-mono)" }}>
                             {style.label}
                         </span>
@@ -238,23 +238,23 @@ function GoalCard({
 
             <div className="mt-4">
                 <div className="flex items-baseline justify-between gap-3 text-[13px]">
-                    <span className="text-[#e5e1e4]">
+                    <span className="text-[color:var(--dash-content-primary)]">
                         <span className="text-[20px] font-semibold" style={{ color: style.color }}>
                             {goal.progress}
                         </span>
-                        <span className="text-[#dfc0b6]"> / {goal.targetCount} {isRevise ? "revised" : "solved"}</span>
+                        <span className="text-[color:var(--dash-content-secondary)]"> / {goal.targetCount} {isRevise ? "revised" : "solved"}</span>
                     </span>
-                    <span className="text-[#dfc0b6] text-right">
+                    <span className="text-[color:var(--dash-content-secondary)] text-right">
                         {fmt(goal.periodStart)} – {fmt(goal.periodEnd)} · <span style={{ color: style.highlight ? style.color : undefined }}>{dueText(goal)}</span>
                     </span>
                 </div>
-                <div className="mt-2 h-2 rounded-full bg-white/5 overflow-hidden">
+                <div className="mt-2 h-2 rounded-full bg-[color:var(--dash-surface-sunken)] overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: style.color }} />
                 </div>
             </div>
 
             {goal.history.length > 0 && (
-                <div className="mt-3 flex items-center gap-2 text-[11px] text-[#dfc0b6]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                <div className="mt-3 flex items-center gap-2 text-[11px] text-[color:var(--dash-content-secondary)]" style={{ fontFamily: "var(--font-geist-mono)" }}>
                     <span className="opacity-70">Previous {goal.recurrence === "weekly" ? "weeks" : "months"}:</span>
                     {[...goal.history].reverse().map((h) => (
                         <span
@@ -271,7 +271,7 @@ function GoalCard({
                 <button
                     type="button"
                     onClick={() => setExpanded((e) => !e)}
-                    className="mt-3 inline-flex items-center gap-1 text-[12px] text-[#dfc0b6] hover:text-[#ffb59d] transition-colors"
+                    className="mt-3 inline-flex items-center gap-1 text-[12px] text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-accent-soft)] transition-colors"
                 >
                     <span className="material-symbols-outlined text-[16px]">{expanded ? "expand_less" : "expand_more"}</span>
                     {expanded ? "Hide problems" : isRevise ? `Show ${goal.problems.length} problems` : `Show ${goal.problems.length} counted problems`}
@@ -281,20 +281,20 @@ function GoalCard({
             {expanded && (
                 <ul className="mt-2 space-y-1.5">
                     {goal.problems.map((p) => (
-                        <li key={p.problemId} className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
-                            <span className="text-[10px] font-bold text-[#ffb59d] w-9 shrink-0" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        <li key={p.problemId} className="flex items-center gap-3 bg-[color:var(--dash-surface-sunken)] rounded-lg px-3 py-2">
+                            <span className="text-[10px] font-bold text-[color:var(--dash-accent-soft)] w-9 shrink-0" style={{ fontFamily: "var(--font-geist-mono)" }}>
                                 {PLATFORM_SHORT[p.platform] ?? p.platform.slice(0, 4).toUpperCase()}
                             </span>
                             {p.url ? (
-                                <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 truncate text-[14px] text-[#e5e1e4] hover:text-[#ffb59d] transition-colors">
+                                <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 truncate text-[14px] text-[color:var(--dash-content-primary)] hover:text-[color:var(--dash-accent-soft)] transition-colors">
                                     {p.title}
                                 </a>
                             ) : (
-                                <span className="flex-1 min-w-0 truncate text-[14px] text-[#e5e1e4]">{p.title}</span>
+                                <span className="flex-1 min-w-0 truncate text-[14px] text-[color:var(--dash-content-primary)]">{p.title}</span>
                             )}
                             {isRevise ? (
                                 p.revisedVia === "auto" ? (
-                                    <span className="shrink-0 inline-flex items-center gap-1 text-[12px] font-semibold text-[#4edea3]" title={`Re-solved ${p.solvedDate}`}>
+                                    <span className="shrink-0 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--dash-feedback-success)]" title={`Re-solved ${p.solvedDate}`}>
                                         <span className="material-symbols-outlined text-[16px]">check_circle</span>
                                         Re-solved
                                     </span>
@@ -304,8 +304,8 @@ function GoalCard({
                                         onClick={() => onRevised(p.problemId, !p.revised)}
                                         className={`shrink-0 inline-flex items-center gap-1 py-1 px-2 rounded-md text-[12px] font-semibold transition-all active:scale-95 ${
                                             p.revised
-                                                ? "text-[#4edea3] hover:bg-white/5"
-                                                : "border border-[rgba(255,181,157,0.4)] text-[#ffb59d] hover:bg-[rgba(255,181,157,0.08)]"
+                                                ? "text-[color:var(--dash-feedback-success)] hover:bg-[color:var(--dash-surface-sunken)]"
+                                                : "border border-[color:var(--dash-accent-line)] text-[color:var(--dash-accent-soft)] hover:bg-[color:var(--dash-accent-wash)]"
                                         }`}
                                         title={p.revised ? "Marked as revised. Click to undo." : "Mark as revised without resubmitting"}
                                     >
@@ -314,12 +314,12 @@ function GoalCard({
                                     </button>
                                 )
                             ) : (
-                                p.solvedDate && <span className="shrink-0 text-[11px] text-[#dfc0b6] opacity-70">{fmt(p.solvedDate)}</span>
+                                p.solvedDate && <span className="shrink-0 text-[11px] text-[color:var(--dash-content-secondary)] opacity-70">{fmt(p.solvedDate)}</span>
                             )}
                         </li>
                     ))}
                     {!isRevise && goal.problems.length === 0 && (
-                        <li className="text-[13px] text-[#dfc0b6] opacity-70 px-3">Nothing counted yet this period.</li>
+                        <li className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 px-3">Nothing counted yet this period.</li>
                     )}
                 </ul>
             )}
@@ -334,7 +334,7 @@ function IconButton({ icon, label, onClick }: { icon: string; label: string; onC
             onClick={onClick}
             aria-label={label}
             title={label}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#dfc0b6] hover:text-[#ffb59d] hover:bg-white/5 transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-accent-soft)] hover:bg-[color:var(--dash-surface-sunken)] transition-colors"
         >
             <span className="material-symbols-outlined text-[18px]">{icon}</span>
         </button>

@@ -36,12 +36,12 @@ export default async function GroupMenteesPage({ params }: { params: Promise<{ g
 function GroupNotFound() {
     return (
         <div className="glass-card rounded-xl p-12 flex flex-col items-center text-center gap-4">
-            <span className="material-symbols-outlined text-[48px] text-[#ffb59d] opacity-70">group_off</span>
+            <span className="material-symbols-outlined text-[48px] text-[color:var(--dash-accent-soft)] opacity-70">group_off</span>
             <div>
-                <p className="text-[18px] font-semibold text-[#e5e1e4]">Group not found</p>
-                <p className="text-[#dfc0b6] opacity-80 mt-1">It may have been deleted, or you don&apos;t own it.</p>
+                <p className="text-[18px] font-semibold text-[color:var(--dash-content-primary)]">Group not found</p>
+                <p className="text-[color:var(--dash-content-secondary)] opacity-80 mt-1">It may have been deleted, or you don&apos;t own it.</p>
             </div>
-            <Link href="/dashboard/mentees" className="text-[#ffb59d] hover:underline">
+            <Link href="/dashboard/mentees" className="text-[color:var(--dash-accent-soft)] hover:underline">
                 Back to mentees
             </Link>
         </div>

@@ -60,11 +60,11 @@ export default function AssignmentPanel({ menteeId, initialAssignments }: Assign
     return (
         <div className="glass-card rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[20px] font-semibold text-[#e5e1e4]">Assignments</h2>
+                <h2 className="text-[20px] font-semibold text-[color:var(--dash-content-primary)]">Assignments</h2>
                 <button
                     type="button"
                     onClick={() => setFormOpen((v) => !v)}
-                    className="inline-flex items-center gap-2 py-2 px-4 rounded-lg border border-[rgba(255,181,157,0.4)] text-[#ffb59d] text-[14px] font-semibold hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all"
+                    className="inline-flex items-center gap-2 py-2 px-4 rounded-lg border border-[color:var(--dash-accent-line)] text-[color:var(--dash-accent-soft)] text-[14px] font-semibold hover:bg-[color:var(--dash-accent-wash)] active:scale-95 transition-all"
                 >
                     <span className="material-symbols-outlined text-[18px]">{formOpen ? "close" : "add"}</span>
                     {formOpen ? "Cancel" : "Assign problem"}
@@ -73,9 +73,9 @@ export default function AssignmentPanel({ menteeId, initialAssignments }: Assign
 
             {/* Assign form (collapsible) */}
             {formOpen && (
-                <div className="bg-white/5 rounded-lg p-4 mb-5 flex flex-col gap-3 animate-[dashboard-fade-in_0.2s_ease]">
+                <div className="bg-[color:var(--dash-surface-sunken)] rounded-lg p-4 mb-5 flex flex-col gap-3 animate-[dashboard-fade-in_0.2s_ease]">
                     <div>
-                        <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                             Problem URL
                         </label>
                         <input
@@ -84,19 +84,19 @@ export default function AssignmentPanel({ menteeId, initialAssignments }: Assign
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
                         />
-                        <p className="text-[11px] text-[#dfc0b6] opacity-60 mt-1">
+                        <p className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-60 mt-1">
                             Supports LeetCode, Codeforces, and AtCoder problem links.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                            <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                                 Due date (optional)
                             </label>
                             <input type="date" className="auth-input w-full mt-1" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                         </div>
                         <div>
-                            <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                            <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                                 Note (optional)
                             </label>
                             <input className="auth-input w-full mt-1" placeholder="Focus on the two-pointer approach" value={note} onChange={(e) => setNote(e.target.value)} />
@@ -106,7 +106,7 @@ export default function AssignmentPanel({ menteeId, initialAssignments }: Assign
                         type="button"
                         disabled={submitting || !url.trim()}
                         onClick={() => void handleAssign()}
-                        className="self-start inline-flex items-center gap-2 py-2.5 px-5 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                        className="self-start inline-flex items-center gap-2 py-2.5 px-5 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                     >
                         <span className={`material-symbols-outlined ${submitting ? "animate-spin" : ""}`}>
                             {submitting ? "progress_activity" : "assignment_turned_in"}
@@ -117,17 +117,17 @@ export default function AssignmentPanel({ menteeId, initialAssignments }: Assign
             )}
 
             {message && (
-                <p className={`text-[13px] mb-4 ${message.ok ? "text-[#4edea3]" : "text-[#ffb59d]"}`}>{message.text}</p>
+                <p className={`text-[13px] mb-4 ${message.ok ? "text-[color:var(--dash-feedback-success)]" : "text-[color:var(--dash-accent-soft)]"}`}>{message.text}</p>
             )}
 
             {/* Pending */}
             {pending.length === 0 && completed.length === 0 ? (
-                <p className="text-[14px] text-[#dfc0b6] opacity-70 py-4 text-center">No assignments yet.</p>
+                <p className="text-[14px] text-[color:var(--dash-content-secondary)] opacity-70 py-4 text-center">No assignments yet.</p>
             ) : (
                 <div className="space-y-5">
                     {pending.length > 0 && (
                         <div>
-                            <p className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70 mb-2" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                            <p className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70 mb-2" style={{ fontFamily: "var(--font-geist-mono)" }}>
                                 Pending ({pending.length})
                             </p>
                             <div className="space-y-2">
@@ -139,7 +139,7 @@ export default function AssignmentPanel({ menteeId, initialAssignments }: Assign
                     )}
                     {completed.length > 0 && (
                         <div>
-                            <p className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70 mb-2" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                            <p className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70 mb-2" style={{ fontFamily: "var(--font-geist-mono)" }}>
                                 Completed ({completed.length})
                             </p>
                             <div className="space-y-2">
@@ -158,23 +158,23 @@ export default function AssignmentPanel({ menteeId, initialAssignments }: Assign
 function AssignmentRow({ a, onComplete }: { a: AssignmentView; onComplete?: () => void }) {
     const isDone = a.status === "completed";
     return (
-        <div className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
+        <div className="flex items-center gap-3 bg-[color:var(--dash-surface-sunken)] rounded-lg p-3">
             <PlatformBadge platform={a.platform} />
             <div className="min-w-0 flex-1">
                 {a.url ? (
-                    <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#e5e1e4] hover:text-[#ffb59d] transition-colors truncate block">
+                    <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[color:var(--dash-content-primary)] hover:text-[color:var(--dash-accent-soft)] transition-colors truncate block">
                         {a.title}
                     </a>
                 ) : (
-                    <span className="text-[14px] text-[#e5e1e4] truncate block">{a.title}</span>
+                    <span className="text-[14px] text-[color:var(--dash-content-primary)] truncate block">{a.title}</span>
                 )}
-                <p className="text-[11px] text-[#dfc0b6] opacity-70">
+                <p className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-70">
                     {a.dueDate ? `Due ${a.dueDate}` : "No due date"}
                     {a.note ? `  ·  ${a.note}` : ""}
                 </p>
             </div>
             {isDone ? (
-                <span className="shrink-0 inline-flex items-center gap-1 text-[12px] font-semibold text-[#4edea3]">
+                <span className="shrink-0 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--dash-feedback-success)]">
                     <span className="material-symbols-outlined text-[16px]">check_circle</span>
                     {a.completedVia === "auto" ? "Auto" : "Done"}
                 </span>
@@ -183,7 +183,7 @@ function AssignmentRow({ a, onComplete }: { a: AssignmentView; onComplete?: () =
                     <button
                         type="button"
                         onClick={onComplete}
-                        className="shrink-0 inline-flex items-center gap-1 py-1.5 px-3 rounded-lg border border-white/10 text-[#dfc0b6] text-[12px] font-semibold hover:bg-white/5 hover:text-[#e5e1e4] active:scale-95 transition-all"
+                        className="shrink-0 inline-flex items-center gap-1 py-1.5 px-3 rounded-lg border border-[color:var(--dash-border-subtle)] text-[color:var(--dash-content-secondary)] text-[12px] font-semibold hover:bg-[color:var(--dash-surface-sunken)] hover:text-[color:var(--dash-content-primary)] active:scale-95 transition-all"
                     >
                         Mark done
                     </button>
@@ -196,8 +196,8 @@ function AssignmentRow({ a, onComplete }: { a: AssignmentView; onComplete?: () =
 function PlatformBadge({ platform }: { platform: string }) {
     const label = platform.slice(0, 2).toUpperCase();
     return (
-        <div className="w-9 h-9 rounded-lg bg-[#353437] flex items-center justify-center shrink-0">
-            <span className="text-[11px] font-bold text-[#ffb59d]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+        <div className="w-9 h-9 rounded-lg bg-[color:var(--dash-surface-hover)] flex items-center justify-center shrink-0">
+            <span className="text-[11px] font-bold text-[color:var(--dash-accent-soft)]" style={{ fontFamily: "var(--font-geist-mono)" }}>
                 {label}
             </span>
         </div>

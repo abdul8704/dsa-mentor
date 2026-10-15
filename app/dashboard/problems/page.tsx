@@ -65,7 +65,7 @@ export default async function AllSolvedProblemsPage({
     <div className="space-y-6">
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-2 text-[13px] text-[#dfc0b6] hover:text-[#ffb59d] transition-colors"
+        className="inline-flex items-center gap-2 text-[13px] text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-accent-soft)] transition-colors"
       >
         <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
           arrow_back

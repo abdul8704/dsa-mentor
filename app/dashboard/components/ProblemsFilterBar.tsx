@@ -11,9 +11,9 @@ const PLATFORM_OPTIONS = ["leetcode", "codeforces", "atcoder", "cses"];
 const DIFFICULTY_OPTIONS = ["easy", "medium", "hard"];
 
 const FIELD_LABEL_CLASS =
-  "text-[11px] uppercase tracking-[0.05em] text-[#a78b82]";
+  "text-[11px] uppercase tracking-[0.05em] text-[color:var(--dash-content-tertiary)]";
 const INPUT_CLASS =
-  "w-full h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-[13px] text-[#e5e1e4] placeholder:text-[#6f645d] focus:outline-none focus:border-[rgba(255,181,157,0.5)] focus:ring-2 focus:ring-[rgba(255,181,157,0.15)] transition-colors [color-scheme:dark]";
+  "w-full h-10 px-3 rounded-lg bg-[color:var(--dash-surface-sunken)] border border-[color:var(--dash-border-strong)] text-[13px] text-[color:var(--dash-content-primary)] placeholder:text-[color:var(--dash-content-tertiary)] focus:outline-none focus:border-[color:var(--dash-accent-line)] focus:ring-2 focus:ring-[color:var(--dash-accent-wash)] transition-colors [color-scheme:dark]";
 
 /**
  * The filter form itself — no toggle button or outer card, since it's
@@ -63,13 +63,13 @@ export default function ProblemsFilterBar({ topics }: ProblemsFilterBarProps) {
   }
 
   return (
-    <div className="border-t border-white/5 pt-5 mb-6">
+    <div className="border-t border-[color:var(--dash-border-subtle)] pt-5 mb-6">
       {activeFilterCount > 0 && (
         <div className="flex justify-end mb-3">
           <button
             type="button"
             onClick={handleClear}
-            className="inline-flex items-center gap-1.5 text-[12px] text-[#a78b82] hover:text-[#ffb4ab] transition-colors"
+            className="inline-flex items-center gap-1.5 text-[12px] text-[color:var(--dash-content-tertiary)] hover:text-[color:var(--dash-feedback-danger)] transition-colors"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "15px" }}>
               close
@@ -183,7 +183,7 @@ export default function ProblemsFilterBar({ topics }: ProblemsFilterBarProps) {
         <div className="sm:col-span-2 lg:col-span-3 flex justify-end pt-1">
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#f47144] text-[#5d1800] text-[13px] font-bold hover:brightness-110 active:scale-95 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] text-[13px] font-bold hover:brightness-110 active:scale-95 transition-all"
           >
             <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
               search

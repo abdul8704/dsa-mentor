@@ -1,5 +1,5 @@
 import StreakStatsClient from "./StreakStatsClient";
-import type { StreakData } from "@/app/lib/types/analytics";
+import type { RecentContest, StreakData } from "@/app/lib/types/analytics";
 
 interface StreakStatsCardProps {
   streak?: StreakData | null;
@@ -7,14 +7,9 @@ interface StreakStatsCardProps {
   contestsAttended?: number;
   /** Total contests held across all platforms in the last 7 days. */
   contestsTotal?: number;
+  contests?: RecentContest[];
 }
 
-export default function StreakStatsCard({ streak, contestsAttended, contestsTotal }: StreakStatsCardProps) {
-  return (
-    <StreakStatsClient
-      streak={streak}
-      contestsAttended={contestsAttended}
-      contestsTotal={contestsTotal}
-    />
-  );
+export default function StreakStatsCard(props: StreakStatsCardProps) {
+  return <StreakStatsClient {...props} />;
 }

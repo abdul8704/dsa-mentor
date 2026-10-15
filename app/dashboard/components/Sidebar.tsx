@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { getBrowserClient } from "@/app/lib/supabase/browser-client";
 import { respondToInvite } from "@/app/actions/mentorship.actions";
 import type { PendingInvite } from "@/app/lib/types/mentorship";
+import { LogoMark } from "@/app/components/brand/Logo";
 
 /** Renders a short "time ago" label (e.g. "3d ago", "2h ago") for an ISO timestamp. */
 function timeAgo(isoDate: string): string {
@@ -20,16 +21,73 @@ function timeAgo(isoDate: string): string {
   return `${days}d ago`;
 }
 
-const NAV_ITEMS = [
-  { label: "Dashboard", icon: "dashboard", href: "/dashboard" },
-  { label: "Mentees", icon: "group", href: "/dashboard/mentees" },
-  { label: "Tasks", icon: "assignment", href: "/dashboard/tasks" },
-  { label: "Goals", icon: "flag", href: "/dashboard/goals" },
+const NAV_GROUPS = [
+  {
+    label: "Practice",
+    items: [
+      { label: "Dashboard", icon: "space_dashboard", href: "/dashboard" },
+      { label: "Solved problems", icon: "checklist", href: "/dashboard/problems" },
+      { label: "Goals", icon: "flag", href: "/dashboard/goals" },
+    ],
+  },
+  {
+    label: "Mentoring",
+    items: [
+      { label: "Mentees", icon: "group", href: "/dashboard/mentees" },
+      { label: "Tasks", icon: "assignment", href: "/dashboard/tasks" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [{ label: "Settings", icon: "settings", href: "/dashboard/settings" }],
+  },
 ];
 
-const FOOTER_ITEMS = [
-  { label: "Settings", icon: "settings", href: "/onboarding?edit=1" },
-];
+/** Nav link with a gradient indicator bar and tinted background when current. */
+function NavLink({
+  href,
+  icon,
+  label,
+  active,
+  onNavigate,
+}: {
+  href: string;
+  icon: string;
+  label: string;
+  active: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={`group relative flex items-center gap-3 min-h-[40px] px-3 rounded-[var(--dash-r-md)] text-[14px] transition-[background-color,color] duration-[var(--dash-dur-fast)] ${
+        active
+          ? "font-semibold text-[color:var(--dash-content-primary)] bg-[color:var(--dash-accent-wash)]"
+          : "text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-content-primary)] hover:bg-[color:var(--dash-surface-sunken)]"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`absolute left-0 top-2 bottom-2 w-[3px] rounded-full transition-[transform,opacity] duration-[var(--dash-dur-base)] ${
+          active ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50 group-hover:opacity-60 group-hover:scale-y-75"
+        }`}
+        style={{ background: "var(--dash-grad-accent-v)" }}
+      />
+      <span
+        className={`material-symbols-outlined text-[20px] transition-transform duration-[var(--dash-dur-base)] group-hover:translate-x-0.5 ${
+          active ? "text-[color:var(--dash-accent)]" : ""
+        }`}
+        style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+      {label}
+    </Link>
+  );
+}
 
 export default function Sidebar({ initialInvites }: { initialInvites: PendingInvite[] }) {
   const pathname = usePathname();
@@ -106,33 +164,40 @@ export default function Sidebar({ initialInvites }: { initialInvites: PendingInv
     }
   }
 
+  const isActiveHref = isActive;
+
   const sidebarContent = (
     <>
-      {/* Logo */}
-      <div className="px-8 mb-10">
-        <h1 className="text-[32px] font-bold tracking-tight leading-[1.2]" style={{ color: "#ffb59d", fontFamily: "var(--font-geist-sans)" }}>
-          AlgoMentor
-        </h1>
-        <p className="text-[12px] mt-1 opacity-70 uppercase tracking-[0.05em] font-medium" style={{ color: "#dfc0b6", fontFamily: "var(--font-geist-mono)" }}>
-          Mentorship Program
-        </p>
-      </div>
+      {/* Brand */}
+      <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="group flex items-center gap-3 px-5 mb-6">
+        <LogoMark size={36} glow className="transition-transform duration-[var(--dash-dur-base)] group-hover:rotate-[-6deg] group-hover:scale-105" />
+        <span>
+          <span className="block text-[17px] font-extrabold tracking-[-0.02em] text-[color:var(--dash-content-primary)]">AlgoMentor</span>
+          <span className="block text-[11px] text-[color:var(--dash-content-tertiary)]">Mentorship Program</span>
+        </span>
+      </Link>
 
       {/* Notifications */}
-      <div className="px-6 mb-4 relative" ref={notifRef}>
+      <div className="px-3 mb-2 relative" ref={notifRef}>
         <button
           type="button"
           onClick={() => setNotifOpen((open) => !open)}
-          className={`w-full flex items-center justify-between px-0 py-3 transition-all duration-300 ${
-            notifOpen ? "text-[#ffb59d]" : "text-[#dfc0b6] hover:text-[#e5e1e4]"
+          aria-expanded={notifOpen}
+          className={`w-full flex items-center justify-between gap-3 min-h-[40px] px-3 rounded-[var(--dash-r-md)] text-[14px] transition-colors duration-[var(--dash-dur-fast)] ${
+            notifOpen
+              ? "text-[color:var(--dash-content-primary)] bg-[color:var(--dash-surface-sunken)]"
+              : "text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-content-primary)] hover:bg-[color:var(--dash-surface-sunken)]"
           }`}
         >
-          <span className="flex items-center">
-            <span className="material-symbols-outlined mr-4">notifications</span>
-            <span className="text-[16px]">Notifications</span>
+          <span className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">notifications</span>
+            Notifications
           </span>
           {invites.length > 0 && (
-            <span className="min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full bg-[#f47144] text-[#5d1800] text-[12px] font-bold">
+            <span
+              className="dash-num min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full text-[11px] font-semibold text-[color:var(--dash-content-on-accent)] animate-pulse"
+              style={{ background: "var(--dash-grad-accent)" }}
+            >
               {invites.length > 9 ? "9+" : invites.length}
             </span>
           )}
@@ -140,40 +205,40 @@ export default function Sidebar({ initialInvites }: { initialInvites: PendingInv
 
         {notifOpen && (
           <div
-            className="absolute left-full top-0 ml-2 w-80 max-w-[85vw] max-h-[440px] overflow-y-auto rounded-xl border border-white/10 z-80 shadow-2xl"
-            style={{ background: "rgba(26, 25, 28, 0.98)", backdropFilter: "blur(24px)" }}
+            className="dash-anim-rise absolute left-3 right-3 lg:left-full lg:right-auto top-full lg:top-0 mt-1 lg:mt-0 lg:ml-2 lg:w-80 max-h-[440px] overflow-y-auto rounded-[var(--dash-r-lg)] border border-[color:var(--dash-border-strong)] z-80"
+            style={{ background: "var(--dash-surface-raised)", boxShadow: "var(--dash-shadow-2)" }}
           >
-            <div className="px-4 py-3 border-b border-white/10">
-              <p className="text-[14px] font-bold text-[#e5e1e4]">Invitations</p>
+            <div className="px-4 py-3 border-b border-[color:var(--dash-border-subtle)]">
+              <p className="text-[14px] font-bold text-[color:var(--dash-content-primary)]">Invitations</p>
             </div>
 
             {invites.length === 0 ? (
               <div className="px-4 py-6 text-center">
-                <span className="material-symbols-outlined text-[28px] text-[#dfc0b6] opacity-50">
+                <span className="material-symbols-outlined text-[28px] text-[color:var(--dash-content-tertiary)]" aria-hidden="true">
                   notifications_off
                 </span>
-                <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">No pending invitations.</p>
+                <p className="text-[13px] text-[color:var(--dash-content-secondary)] mt-2">No pending invitations.</p>
               </div>
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-[color:var(--dash-border-subtle)]">
                 {invites.map((invite) => {
                   const isResponding = respondingToken === invite.token;
                   const feedback = inviteFeedback?.token === invite.token ? inviteFeedback.message : null;
                   return (
                     <li key={invite.token} className="px-4 py-3">
-                      <p className="text-[14px] text-[#e5e1e4] leading-snug">
-                        <span className="font-semibold text-[#ffb59d]">{invite.mentorName}</span> invited you to
+                      <p className="text-[14px] text-[color:var(--dash-content-primary)] leading-snug">
+                        <span className="font-semibold text-[color:var(--dash-accent-soft)]">{invite.mentorName}</span> invited you to
                         connect as their mentee.
                       </p>
-                      <p className="text-[12px] text-[#dfc0b6] opacity-60 mt-1">{timeAgo(invite.createdAt)}</p>
+                      <p className="text-[12px] text-[color:var(--dash-content-tertiary)] mt-1">{timeAgo(invite.createdAt)}</p>
                       <div className="flex items-center gap-2 mt-3">
                         <button
                           type="button"
                           onClick={() => void handleInviteResponse(invite.token, true)}
                           disabled={respondingToken !== null}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-[#f47144] text-[#5d1800] text-[13px] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
+                          className="dash-btn dash-btn-primary dash-btn-sm flex-1"
                         >
-                          <span className={`material-symbols-outlined text-[16px] ${isResponding ? "animate-spin" : ""}`}>
+                          <span className={`material-symbols-outlined text-[16px] ${isResponding ? "animate-spin" : ""}`} aria-hidden="true">
                             {isResponding ? "progress_activity" : "check"}
                           </span>
                           Accept
@@ -182,12 +247,12 @@ export default function Sidebar({ initialInvites }: { initialInvites: PendingInv
                           type="button"
                           onClick={() => void handleInviteResponse(invite.token, false)}
                           disabled={respondingToken !== null}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 border border-white/10 text-[#dfc0b6] text-[13px] font-semibold rounded-lg hover:bg-white/5 hover:text-[#e5e1e4] active:scale-95 transition-all disabled:opacity-60"
+                          className="dash-btn dash-btn-ghost dash-btn-sm flex-1"
                         >
                           Decline
                         </button>
                       </div>
-                      {feedback && <p className="text-[12px] text-[#dfc0b6] opacity-80 mt-2">{feedback}</p>}
+                      {feedback && <p className="text-[12px] text-[color:var(--dash-content-secondary)] mt-2">{feedback}</p>}
                     </li>
                   );
                 })}
@@ -197,59 +262,36 @@ export default function Sidebar({ initialInvites }: { initialInvites: PendingInv
         )}
       </div>
 
-      {/* Nav Links */}
-      <nav className="flex-1 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setMobileOpen(false)}
-            className={`flex items-center px-6 py-3 transition-all duration-300 ${
-              isActive(item.href)
-                ? "text-[#ffb59d] font-bold border-l-4 border-[#ffb59d] bg-gradient-to-r from-[rgba(244,113,68,0.1)] to-transparent"
-                : "text-[#dfc0b6] hover:bg-white/5 hover:text-[#e5e1e4]"
-            }`}
-          >
-            <span className="material-symbols-outlined mr-4">{item.icon}</span>
-            <span className="text-[16px]">{item.label}</span>
-          </Link>
+      {/* Nav groups */}
+      <nav className="flex-1 overflow-y-auto px-3 flex flex-col gap-5 mt-2" aria-label="Dashboard">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="px-3 mb-1.5 text-[11px] font-semibold text-[color:var(--dash-content-tertiary)]">{group.label}</p>
+            <div className="flex flex-col gap-0.5">
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.href}
+                  {...item}
+                  active={isActiveHref(item.href)}
+                  onNavigate={() => setMobileOpen(false)}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
-      {/* New Task + Logout */}
-      <div className="px-6 mb-8 space-y-3">
-        <Link
-          href="/dashboard/mentees"
-          onClick={() => setMobileOpen(false)}
-          className="w-full py-3 px-4 bg-[#f47144] text-[#5d1800] font-bold rounded-lg flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
-        >
-          <span className="material-symbols-outlined">person_add</span>
-          <span>Invite mentee</span>
+      {/* Invite + Logout */}
+      <div className="px-3 pt-4 mt-4 border-t border-[color:var(--dash-border-subtle)] flex flex-col gap-2">
+        <Link href="/dashboard/mentees" onClick={() => setMobileOpen(false)} className="dash-btn dash-btn-primary w-full">
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">person_add</span>
+          Invite mentee
         </Link>
-        <button
-          type="button"
-          onClick={() => setShowLogoutConfirm(true)}
-          className="w-full py-3 px-4 border border-white/10 text-[#dfc0b6] font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-white/5 hover:text-[#e5e1e4] active:scale-95 transition-all"
-        >
-          <span className="material-symbols-outlined">logout</span>
-          <span>Logout</span>
+        <button type="button" onClick={() => setShowLogoutConfirm(true)} className="dash-btn dash-btn-ghost w-full">
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">logout</span>
+          Logout
         </button>
       </div>
-
-      {/* Footer Links */}
-      <footer className="border-t border-white/10 pt-6 space-y-1">
-        {FOOTER_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setMobileOpen(false)}
-            className="text-[#dfc0b6] flex items-center px-6 py-3 transition-colors hover:bg-white/5 hover:text-[#e5e1e4]"
-          >
-            <span className="material-symbols-outlined mr-4">{item.icon}</span>
-            <span className="text-[16px]">{item.label}</span>
-          </Link>
-        ))}
-      </footer>
     </>
   );
 
@@ -304,7 +346,7 @@ export default function Sidebar({ initialInvites }: { initialInvites: PendingInv
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-[70] lg:hidden bg-[#201f22] border border-white/10 rounded-lg p-2 text-[#e5e1e4] hover:bg-white/10 transition-colors"
+        className="fixed top-4 left-4 z-[70] lg:hidden w-11 h-11 grid place-items-center rounded-[var(--dash-r-md)] border border-[color:var(--dash-border-strong)] bg-[color:var(--dash-surface-raised)] text-[color:var(--dash-content-primary)] hover:bg-[color:var(--dash-surface-hover)] transition-colors"
         aria-label="Open sidebar"
       >
         <span className="material-symbols-outlined">menu</span>
@@ -313,7 +355,7 @@ export default function Sidebar({ initialInvites }: { initialInvites: PendingInv
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-[55] lg:hidden"
+          className="fixed inset-0 z-[55] lg:hidden bg-[color:var(--dash-surface-overlay)] backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -321,22 +363,21 @@ export default function Sidebar({ initialInvites }: { initialInvites: PendingInv
       {/* Sidebar — desktop: always visible, mobile: slide in */}
       <aside
         className={`
-          w-[280px] h-screen fixed left-0 top-0
-          border-r border-white/10 z-[60]
-          flex flex-col py-8
-          transition-transform duration-300 ease-in-out
+          w-[248px] h-screen fixed left-0 top-0
+          border-r border-[color:var(--dash-border-subtle)] z-[60]
+          flex flex-col py-6
+          transition-transform duration-[var(--dash-dur-slow)] ease-[var(--dash-ease)]
           lg:translate-x-0
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         `}
         style={{
-          background: "rgba(19, 19, 21, 0.6)",
-          backdropFilter: "blur(24px)",
+          background: "linear-gradient(180deg, rgba(47,196,141,0.05), transparent 30%), var(--dash-surface-base)",
         }}
       >
         {/* Close button — mobile only */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 lg:hidden text-[#dfc0b6] hover:text-white transition-colors"
+          className="absolute top-4 right-3 lg:hidden w-10 h-10 grid place-items-center rounded-[var(--dash-r-md)] text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-content-primary)] hover:bg-[color:var(--dash-surface-sunken)] transition-colors"
           aria-label="Close sidebar"
         >
           <span className="material-symbols-outlined">close</span>

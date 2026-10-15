@@ -15,14 +15,14 @@ export default function LoadingCard({
 }) {
     return (
         <div
-            className={`glass-card rounded-2xl flex flex-col items-center text-center gap-4 animate-[dashboard-fade-in_0.25s_ease] ${
+            className={`glass-card flex flex-col items-center text-center gap-4 animate-[dashboard-fade-in_0.25s_ease] ${
                 size === "sm" ? "px-6 py-6 gap-3" : "px-10 py-9"
             }`}
         >
             <div className={`dashboard-loading-spinner ${size === "sm" ? "dashboard-loading-spinner--sm" : ""}`} />
             <div>
-                <p className={`font-semibold text-[#e5e1e4] ${size === "sm" ? "text-[14px]" : "text-[16px]"}`}>{title}</p>
-                {subtitle && <p className="text-[12px] text-[#dfc0b6] opacity-70 mt-1">{subtitle}</p>}
+                <p className={`font-semibold text-[color:var(--dash-content-primary)] ${size === "sm" ? "text-[14px]" : "text-[16px]"}`}>{title}</p>
+                {subtitle && <p className="text-[12px] text-[color:var(--dash-content-secondary)] mt-1">{subtitle}</p>}
             </div>
         </div>
     );

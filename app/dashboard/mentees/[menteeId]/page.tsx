@@ -9,16 +9,7 @@ import { getNotesForMentee } from "@/app/actions/note.actions";
 import type { DashboardData, UpcomingContest, RecentContestsResult } from "@/app/lib/types/analytics";
 import type { AssignmentInsights } from "@/app/lib/types/mentorship";
 
-import ProfileCard from "../../components/ProfileCard";
-import StreakStatsCard from "../../components/StreakStatsCard";
-import RecentProblemsTable from "../../components/RecentProblemsTable";
-import Heatmap from "../../components/Heatmap";
-import StatsOverview from "../../components/StatsOverview";
-import ContestRatingGraph from "../../components/ContestRatingGraph";
-import TopicDonut from "../../components/TopicDonut";
-import TopicProgressBars from "../../components/TopicProgressBars";
-import UpcomingContests from "../../components/UpcomingContests";
-import RecentContests from "../../components/RecentContests";
+import DashboardView from "../../components/DashboardView";
 import AssignmentPanel from "./AssignmentPanel";
 import NotesPanel from "./NotesPanel";
 import AssignmentInsightsCard from "./AssignmentInsightsCard";
@@ -66,7 +57,7 @@ export default async function MenteeDetailPage({ params }: { params: Promise<{ m
             {/* Back link */}
             <Link
                 href="/dashboard/mentees"
-                className="inline-flex items-center gap-1 text-[13px] text-[#dfc0b6] hover:text-[#ffb59d] transition-colors w-fit"
+                className="inline-flex items-center gap-1 text-[13px] text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-accent-soft)] transition-colors w-fit"
             >
                 <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                 Back to mentees
@@ -75,54 +66,20 @@ export default async function MenteeDetailPage({ params }: { params: Promise<{ m
             {isMentorViewingOther && (
                 <Link
                     href={`/dashboard/goals?user=${menteeId}`}
-                    className="inline-flex items-center gap-1 text-[13px] text-[#dfc0b6] hover:text-[#ffb59d] transition-colors w-fit"
+                    className="inline-flex items-center gap-1 text-[13px] text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-accent-soft)] transition-colors w-fit"
                 >
                     <span className="material-symbols-outlined text-[18px]">flag</span>
                     View and set goals
                 </Link>
             )}
 
-            {/* Exact mirror of the mentee's own dashboard — same components, same order. */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                    <ProfileCard profile={data.profile} streak={data.streak} userId={menteeId} />
-                </div>
-                <div>
-                    <StreakStatsCard
-                        streak={data.streak}
-                        contestsAttended={recentContests.attendedCount}
-                        contestsTotal={recentContests.total}
-                    />
-                </div>
-            </div>
-
-            <RecentProblemsTable data={data.recentProblems} />
-
-            <Heatmap data={data.heatmap} />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <StatsOverview difficulty={data.difficulty} platforms={data.platforms} />
-                <ContestRatingGraph data={data.contestRating} />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-6">
-                    <TopicDonut data={data.topics} />
-                </div>
-                <div className="lg:col-span-6">
-                    <TopicProgressBars data={data.topics.last7Days} />
-                </div>
-            </div>
-
-            {/* Contests: Recent (attendance) + Upcoming — 50/50 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <RecentContests
-                    contests={recentContests.contests}
-                    attendedCount={recentContests.attendedCount}
-                    total={recentContests.total}
-                />
-                <UpcomingContests contests={upcomingContests} />
-            </div>
+            {/* Exact mirror of the mentee's own dashboard — same view, same order. */}
+            <DashboardView
+                data={data}
+                recentContests={recentContests}
+                upcomingContests={upcomingContests}
+                userId={menteeId}
+            />
 
             {/* Mentor-only tools, at the bottom: assign + notes share one 50/50 row. */}
             {isMentorViewingOther && (
@@ -141,12 +98,12 @@ export default async function MenteeDetailPage({ params }: { params: Promise<{ m
 function NotAuthorized() {
     return (
         <div className="glass-card rounded-xl p-12 flex flex-col items-center text-center gap-4">
-            <span className="material-symbols-outlined text-[48px] text-[#ffb59d] opacity-70">lock</span>
+            <span className="material-symbols-outlined text-[48px] text-[color:var(--dash-accent-soft)] opacity-70">lock</span>
             <div>
-                <p className="text-[18px] font-semibold text-[#e5e1e4]">Not authorized</p>
-                <p className="text-[#dfc0b6] opacity-80 mt-1">You are not an active mentor for this user.</p>
+                <p className="text-[18px] font-semibold text-[color:var(--dash-content-primary)]">Not authorized</p>
+                <p className="text-[color:var(--dash-content-secondary)] opacity-80 mt-1">You are not an active mentor for this user.</p>
             </div>
-            <Link href="/dashboard/mentees" className="text-[#ffb59d] hover:underline">
+            <Link href="/dashboard/mentees" className="text-[color:var(--dash-accent-soft)] hover:underline">
                 Back to mentees
             </Link>
         </div>

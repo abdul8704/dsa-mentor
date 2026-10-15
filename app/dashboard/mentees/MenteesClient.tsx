@@ -41,17 +41,17 @@ export default function MenteesClient({ mentees, groups, sentInvites }: MenteesC
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-[28px] lg:text-[32px] font-semibold tracking-[-0.02em] text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-sans)" }}>
+                    <h1 className="text-[28px] lg:text-[32px] font-semibold tracking-[-0.02em] text-[color:var(--dash-content-primary)]" style={{ fontFamily: "var(--font-geist-sans)" }}>
                         Your Mentees
                     </h1>
-                    <p className="text-[#dfc0b6] opacity-80 mt-1">
+                    <p className="text-[color:var(--dash-content-secondary)] opacity-80 mt-1">
                         {mentees.length} active {mentees.length === 1 ? "mentee" : "mentees"}
                     </p>
                 </div>
                 <button
                     type="button"
                     onClick={() => setInviteOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 py-3 px-5 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
+                    className="inline-flex items-center justify-center gap-2 py-3 px-5 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
                 >
                     <span className="material-symbols-outlined">person_add</span>
                     Invite mentee
@@ -71,16 +71,16 @@ export default function MenteesClient({ mentees, groups, sentInvites }: MenteesC
 
             {/* Mentee stats table */}
             <div className="space-y-3">
-                <h2 className="text-[18px] font-semibold text-[#e5e1e4]">All mentees</h2>
+                <h2 className="text-[18px] font-semibold text-[color:var(--dash-content-primary)]">All mentees</h2>
                 <MenteeTable
                     mentees={mentees}
                     onNote={(id, label) => setNoteTarget({ kind: "mentee", id, label })}
                     emptyState={
                         <div className="glass-card rounded-xl p-12 flex flex-col items-center text-center gap-4">
-                            <span className="material-symbols-outlined text-[48px] text-[#ffb59d] opacity-70">group</span>
+                            <span className="material-symbols-outlined text-[48px] text-[color:var(--dash-accent-soft)] opacity-70">group</span>
                             <div>
-                                <p className="text-[18px] font-semibold text-[#e5e1e4]">No mentees yet</p>
-                                <p className="text-[#dfc0b6] opacity-80 mt-1 max-w-md">
+                                <p className="text-[18px] font-semibold text-[color:var(--dash-content-primary)]">No mentees yet</p>
+                                <p className="text-[color:var(--dash-content-secondary)] opacity-80 mt-1 max-w-md">
                                     Invite students by searching for their account or entering their email. Once they accept, their
                                     progress appears here.
                                 </p>
@@ -88,7 +88,7 @@ export default function MenteesClient({ mentees, groups, sentInvites }: MenteesC
                             <button
                                 type="button"
                                 onClick={() => setInviteOpen(true)}
-                                className="inline-flex items-center gap-2 py-2.5 px-5 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
+                                className="inline-flex items-center gap-2 py-2.5 px-5 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
                             >
                                 <span className="material-symbols-outlined">person_add</span>
                                 Invite your first mentee
@@ -172,12 +172,12 @@ function GroupsSection({
     return (
         <div className="space-y-3">
             <div className="flex items-center justify-between">
-                <h2 className="text-[18px] font-semibold text-[#e5e1e4]">Groups</h2>
+                <h2 className="text-[18px] font-semibold text-[color:var(--dash-content-primary)]">Groups</h2>
                 {groups.length > 0 && (
                     <button
                         type="button"
                         onClick={onCreate}
-                        className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-[rgba(255,181,157,0.4)] text-[#ffb59d] text-[13px] font-semibold hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all"
+                        className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-[color:var(--dash-accent-line)] text-[color:var(--dash-accent-soft)] text-[13px] font-semibold hover:bg-[color:var(--dash-accent-wash)] active:scale-95 transition-all"
                     >
                         <span className="material-symbols-outlined text-[16px]">add</span>
                         New group
@@ -187,10 +187,10 @@ function GroupsSection({
 
             {groups.length === 0 ? (
                 <div className="glass-card rounded-xl p-8 flex flex-col items-center text-center gap-3">
-                    <span className="material-symbols-outlined text-[36px] text-[#ffb59d] opacity-70">workspaces</span>
+                    <span className="material-symbols-outlined text-[36px] text-[color:var(--dash-accent-soft)] opacity-70">workspaces</span>
                     <div>
-                        <p className="text-[15px] font-semibold text-[#e5e1e4]">No groups yet</p>
-                        <p className="text-[#dfc0b6] opacity-80 mt-1 max-w-md text-[13px]">
+                        <p className="text-[15px] font-semibold text-[color:var(--dash-content-primary)]">No groups yet</p>
+                        <p className="text-[color:var(--dash-content-secondary)] opacity-80 mt-1 max-w-md text-[13px]">
                             Group mentees together to assign tasks and send notes to all of them at once. Mentees never see
                             which group they&apos;re in.
                         </p>
@@ -198,7 +198,7 @@ function GroupsSection({
                     <button
                         type="button"
                         onClick={onCreate}
-                        className="inline-flex items-center gap-2 py-2 px-4 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
+                        className="inline-flex items-center gap-2 py-2 px-4 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
                     >
                         <span className="material-symbols-outlined text-[18px]">add</span>
                         Create a group
@@ -218,12 +218,12 @@ function GroupsSection({
                                     onOpenGroup(g.id);
                                 }
                             }}
-                            className="glass-card rounded-xl p-4 flex flex-col gap-3 cursor-pointer hover:border-[rgba(255,181,157,0.35)] transition-colors"
+                            className="glass-card rounded-xl p-4 flex flex-col gap-3 cursor-pointer hover:border-[color:var(--dash-accent-line)] transition-colors"
                         >
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                    <p className="text-[15px] font-semibold text-[#e5e1e4] truncate">{g.name}</p>
-                                    <p className="text-[12px] text-[#dfc0b6] opacity-70">
+                                    <p className="text-[15px] font-semibold text-[color:var(--dash-content-primary)] truncate">{g.name}</p>
+                                    <p className="text-[12px] text-[color:var(--dash-content-secondary)] opacity-70">
                                         {g.memberCount} {g.memberCount === 1 ? "mentee" : "mentees"}
                                     </p>
                                 </div>
@@ -233,7 +233,7 @@ function GroupsSection({
                                         e.stopPropagation();
                                         onAddMentees(g.id, g.name);
                                     }}
-                                    className="shrink-0 text-[#dfc0b6] hover:text-[#ffb59d] transition-colors"
+                                    className="shrink-0 text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-accent-soft)] transition-colors"
                                     aria-label={`Add mentees to ${g.name}`}
                                     title="Add mentees"
                                 >
@@ -247,7 +247,7 @@ function GroupsSection({
                                         e.stopPropagation();
                                         onAssign(g.id, g.name);
                                     }}
-                                    className="flex-1 min-w-[86px] inline-flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border border-[rgba(255,181,157,0.4)] text-[#ffb59d] text-[12px] font-semibold hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all"
+                                    className="flex-1 min-w-[86px] inline-flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border border-[color:var(--dash-accent-line)] text-[color:var(--dash-accent-soft)] text-[12px] font-semibold hover:bg-[color:var(--dash-accent-wash)] active:scale-95 transition-all"
                                 >
                                     <span className="material-symbols-outlined text-[16px]">assignment_turned_in</span>
                                     Assign task
@@ -258,7 +258,7 @@ function GroupsSection({
                                         e.stopPropagation();
                                         onManage(g.id);
                                     }}
-                                    className="flex-1 min-w-[86px] inline-flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border border-white/10 text-[#dfc0b6] text-[12px] font-semibold hover:bg-white/5 hover:text-[#e5e1e4] active:scale-95 transition-all"
+                                    className="flex-1 min-w-[86px] inline-flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border border-[color:var(--dash-border-subtle)] text-[color:var(--dash-content-secondary)] text-[12px] font-semibold hover:bg-[color:var(--dash-surface-sunken)] hover:text-[color:var(--dash-content-primary)] active:scale-95 transition-all"
                                 >
                                     <span className="material-symbols-outlined text-[16px]">settings</span>
                                     Manage team
@@ -269,7 +269,7 @@ function GroupsSection({
                                         e.stopPropagation();
                                         onNote(g.id, g.name);
                                     }}
-                                    className="flex-1 min-w-[86px] inline-flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border border-white/10 text-[#dfc0b6] text-[12px] font-semibold hover:bg-white/5 hover:text-[#e5e1e4] active:scale-95 transition-all"
+                                    className="flex-1 min-w-[86px] inline-flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border border-[color:var(--dash-border-subtle)] text-[color:var(--dash-content-secondary)] text-[12px] font-semibold hover:bg-[color:var(--dash-surface-sunken)] hover:text-[color:var(--dash-content-primary)] active:scale-95 transition-all"
                                 >
                                     <span className="material-symbols-outlined text-[16px]">chat</span>
                                     Send message
@@ -332,7 +332,7 @@ function CreateGroupModal({
         <ModalShell title="Create a group" onClose={onClose}>
             <div className="flex flex-col gap-4">
                 <div>
-                    <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                    <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                         Group name
                     </label>
                     <input
@@ -345,7 +345,7 @@ function CreateGroupModal({
                 </div>
 
                 <div>
-                    <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                    <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                         Add mentees ({selected.size} selected)
                     </label>
                     <MenteePicker mentees={mentees} selected={selected} onToggle={toggle} />
@@ -355,13 +355,13 @@ function CreateGroupModal({
                     type="button"
                     disabled={busy || !name.trim()}
                     onClick={() => void handleCreate()}
-                    className="self-start inline-flex items-center gap-2 py-2.5 px-5 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                    className="self-start inline-flex items-center gap-2 py-2.5 px-5 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                 >
                     <span className={`material-symbols-outlined ${busy ? "animate-spin" : ""}`}>{busy ? "progress_activity" : "add"}</span>
                     {busy ? "Creating…" : "Create group"}
                 </button>
 
-                {message && <p className="text-[13px] text-[#dfc0b6]">{message}</p>}
+                {message && <p className="text-[13px] text-[color:var(--dash-content-secondary)]">{message}</p>}
             </div>
         </ModalShell>
     );
@@ -377,7 +377,7 @@ function MenteePicker({
     onToggle: (id: string) => void;
 }) {
     if (mentees.length === 0) {
-        return <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">Invite mentees first, then group them.</p>;
+        return <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 mt-2">Invite mentees first, then group them.</p>;
     }
     return (
         <div className="mt-2 max-h-[260px] overflow-y-auto space-y-1.5 pr-1">
@@ -389,17 +389,17 @@ function MenteePicker({
                         key={m.userId}
                         onClick={() => onToggle(m.userId)}
                         className={`w-full flex items-center gap-3 rounded-lg p-2.5 text-left transition-all ${
-                            checked ? "bg-[rgba(255,181,157,0.1)] border border-[rgba(255,181,157,0.4)]" : "bg-white/5 border border-transparent hover:bg-white/[0.07]"
+                            checked ? "bg-[color:var(--dash-accent-wash)] border border-[color:var(--dash-accent-line)]" : "bg-[color:var(--dash-surface-sunken)] border border-transparent hover:bg-white/[0.07]"
                         }`}
                     >
                         <span
                             className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
-                                checked ? "bg-[#f47144] border-[#f47144]" : "border-white/20"
+                                checked ? "bg-[color:var(--dash-accent)] border-[color:var(--dash-accent)]" : "border-white/20"
                             }`}
                         >
-                            {checked && <span className="material-symbols-outlined text-[14px] text-[#5d1800]">check</span>}
+                            {checked && <span className="material-symbols-outlined text-[14px] text-[color:var(--dash-content-on-accent)]">check</span>}
                         </span>
-                        <span className="text-[13px] text-[#e5e1e4] truncate">{m.name}</span>
+                        <span className="text-[13px] text-[color:var(--dash-content-primary)] truncate">{m.name}</span>
                     </button>
                 );
             })}
@@ -543,11 +543,11 @@ function AddMenteesModal({
     return (
         <ModalShell title={`Add mentees to "${label}"`} onClose={handleClose}>
             {loading ? (
-                <p className="text-[13px] text-[#dfc0b6] opacity-70 py-4">Loading…</p>
+                <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 py-4">Loading…</p>
             ) : (
                 <div className="flex flex-col gap-4">
                     <div>
-                        <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                             Your mentees ({selected.size} selected)
                         </label>
                         <input
@@ -557,19 +557,19 @@ function AddMenteesModal({
                             onChange={(e) => setQuery(e.target.value)}
                         />
                         {nonMembers.length === 0 ? (
-                            <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">Every mentee is already in this group.</p>
+                            <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 mt-2">Every mentee is already in this group.</p>
                         ) : filteredNonMembers.length === 0 ? (
-                            <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">No mentees match &quot;{query}&quot;.</p>
+                            <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 mt-2">No mentees match &quot;{query}&quot;.</p>
                         ) : (
                             <MenteePicker mentees={filteredNonMembers} selected={selected} onToggle={toggle} />
                         )}
                     </div>
 
-                    <div className="pt-3 border-t border-white/5">
+                    <div className="pt-3 border-t border-[color:var(--dash-border-subtle)]">
                         <button
                             type="button"
                             onClick={() => setSearchOpen((v) => !v)}
-                            className="flex items-center gap-1.5 text-[13px] font-semibold text-[#ffb59d] hover:opacity-80 transition-opacity"
+                            className="flex items-center gap-1.5 text-[13px] font-semibold text-[color:var(--dash-accent-soft)] hover:opacity-80 transition-opacity"
                         >
                             <span className="material-symbols-outlined text-[16px]">{searchOpen ? "expand_less" : "search"}</span>
                             Search for new users
@@ -584,32 +584,32 @@ function AddMenteesModal({
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
-                                <p className="text-[11px] text-[#dfc0b6] opacity-60 mt-1">
+                                <p className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-60 mt-1">
                                     New users need to accept an invite before they can be added to a group.
                                 </p>
                                 <div className="mt-2 max-h-[220px] overflow-y-auto space-y-2">
-                                    {searching && <p className="text-[13px] text-[#dfc0b6] opacity-70 py-2">Searching…</p>}
+                                    {searching && <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 py-2">Searching…</p>}
                                     {!searching && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
-                                        <p className="text-[13px] text-[#dfc0b6] opacity-70 py-2">No users found.</p>
+                                        <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 py-2">No users found.</p>
                                     )}
                                     {searchResults.map((u) => (
-                                        <div key={u.userId} className="flex items-center gap-3 bg-white/5 rounded-lg p-2.5">
-                                            <div className="w-8 h-8 rounded-full bg-[#353437] flex items-center justify-center shrink-0">
-                                                <span className="text-[#ffb59d] text-[13px] font-bold">{u.name.charAt(0).toUpperCase()}</span>
+                                        <div key={u.userId} className="flex items-center gap-3 bg-[color:var(--dash-surface-sunken)] rounded-lg p-2.5">
+                                            <div className="w-8 h-8 rounded-full bg-[color:var(--dash-surface-hover)] flex items-center justify-center shrink-0">
+                                                <span className="text-[color:var(--dash-accent-soft)] text-[13px] font-bold">{u.name.charAt(0).toUpperCase()}</span>
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-[13px] text-[#e5e1e4] truncate">{u.name}</p>
+                                                <p className="text-[13px] text-[color:var(--dash-content-primary)] truncate">{u.name}</p>
                                             </div>
                                             {u.alreadyConnected ? (
-                                                <span className="text-[11px] text-[#dfc0b6] opacity-70 shrink-0">Already a mentee</span>
+                                                <span className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-70 shrink-0">Already a mentee</span>
                                             ) : u.invitePending ? (
-                                                <span className="text-[11px] text-[#dfc0b6] opacity-70 shrink-0">Invited</span>
+                                                <span className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-70 shrink-0">Invited</span>
                                             ) : (
                                                 <button
                                                     type="button"
                                                     disabled={inviteBusy}
                                                     onClick={() => void handleInvite(u.userId)}
-                                                    className="shrink-0 inline-flex items-center gap-1 py-1 px-2.5 rounded-lg border border-[rgba(255,181,157,0.4)] text-[#ffb59d] text-[12px] font-semibold hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all disabled:opacity-50"
+                                                    className="shrink-0 inline-flex items-center gap-1 py-1 px-2.5 rounded-lg border border-[color:var(--dash-accent-line)] text-[color:var(--dash-accent-soft)] text-[12px] font-semibold hover:bg-[color:var(--dash-accent-wash)] active:scale-95 transition-all disabled:opacity-50"
                                                 >
                                                     <span className="material-symbols-outlined text-[14px]">person_add</span>
                                                     Invite
@@ -618,18 +618,18 @@ function AddMenteesModal({
                                         </div>
                                     ))}
                                 </div>
-                                {inviteMessage && <p className="text-[12px] text-[#dfc0b6] mt-2">{inviteMessage}</p>}
+                                {inviteMessage && <p className="text-[12px] text-[color:var(--dash-content-secondary)] mt-2">{inviteMessage}</p>}
                             </div>
                         )}
                     </div>
 
                     <div className="flex items-center justify-end gap-3 pt-2">
-                        {message && <p className={`text-[13px] mr-auto ${message.ok ? "text-[#4edea3]" : "text-[#ffb59d]"}`}>{message.text}</p>}
+                        {message && <p className={`text-[13px] mr-auto ${message.ok ? "text-[color:var(--dash-feedback-success)]" : "text-[color:var(--dash-accent-soft)]"}`}>{message.text}</p>}
                         <button
                             type="button"
                             disabled={busy}
                             onClick={() => void handleDone()}
-                            className="inline-flex items-center gap-2 py-2.5 px-5 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                            className="inline-flex items-center gap-2 py-2.5 px-5 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                         >
                             <span className={`material-symbols-outlined ${busy ? "animate-spin" : ""}`}>{busy ? "progress_activity" : "check"}</span>
                             {busy ? "Adding…" : selected.size > 0 ? `Add ${selected.size} & Done` : "Done"}
@@ -746,11 +746,11 @@ function ManageGroupModal({
     return (
         <ModalShell title="Manage team" onClose={handleClose}>
             {loading ? (
-                <p className="text-[13px] text-[#dfc0b6] opacity-70 py-4">Loading…</p>
+                <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 py-4">Loading…</p>
             ) : (
                 <div className="flex flex-col gap-5">
                     <div>
-                        <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                             Group name
                         </label>
                         <div className="flex gap-2 mt-1">
@@ -759,7 +759,7 @@ function ManageGroupModal({
                                 type="button"
                                 disabled={busy || !name.trim()}
                                 onClick={() => void handleRename()}
-                                className="shrink-0 inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-[rgba(255,181,157,0.4)] text-[#ffb59d] text-[13px] font-semibold hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all disabled:opacity-50"
+                                className="shrink-0 inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-[color:var(--dash-accent-line)] text-[color:var(--dash-accent-soft)] text-[13px] font-semibold hover:bg-[color:var(--dash-accent-wash)] active:scale-95 transition-all disabled:opacity-50"
                             >
                                 Save
                             </button>
@@ -767,21 +767,21 @@ function ManageGroupModal({
                     </div>
 
                     <div>
-                        <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                             Current members ({members.length})
                         </label>
                         {members.length === 0 ? (
-                            <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">No mentees in this group yet.</p>
+                            <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 mt-2">No mentees in this group yet.</p>
                         ) : (
                             <div className="mt-2 max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
                                 {members.map((m) => (
-                                    <div key={m.id} className="flex items-center justify-between gap-3 bg-white/5 rounded-lg p-2.5">
-                                        <span className="text-[13px] text-[#e5e1e4] truncate">{m.name}</span>
+                                    <div key={m.id} className="flex items-center justify-between gap-3 bg-[color:var(--dash-surface-sunken)] rounded-lg p-2.5">
+                                        <span className="text-[13px] text-[color:var(--dash-content-primary)] truncate">{m.name}</span>
                                         <button
                                             type="button"
                                             disabled={busy}
                                             onClick={() => void handleRemove(m.id)}
-                                            className="shrink-0 text-[#dfc0b6] hover:text-red-300 transition-colors disabled:opacity-50"
+                                            className="shrink-0 text-[color:var(--dash-content-secondary)] hover:text-red-300 transition-colors disabled:opacity-50"
                                             aria-label={`Remove ${m.name} from group`}
                                             title="Remove from group"
                                         >
@@ -793,11 +793,11 @@ function ManageGroupModal({
                         )}
                     </div>
 
-                    <p className="text-[11px] text-[#dfc0b6] opacity-60 -mt-2">
+                    <p className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-60 -mt-2">
                         Use the &quot;Add mentees&quot; icon on the group card to add more members.
                     </p>
 
-                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
+                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-[color:var(--dash-border-subtle)]">
                         <button
                             type="button"
                             disabled={busy}
@@ -810,13 +810,13 @@ function ManageGroupModal({
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="inline-flex items-center gap-2 py-2.5 px-5 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
+                            className="inline-flex items-center gap-2 py-2.5 px-5 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all"
                         >
                             Done
                         </button>
                     </div>
 
-                    {message && <p className="text-[13px] text-[#dfc0b6]">{message}</p>}
+                    {message && <p className="text-[13px] text-[color:var(--dash-content-secondary)]">{message}</p>}
                 </div>
             )}
         </ModalShell>
@@ -905,13 +905,13 @@ function AssignToGroupModal({
         <ModalShell title={`Assign task to "${label}"`} onClose={onClose}>
             <div className="flex flex-col gap-3">
                 <div>
-                    <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                    <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                         Assign to ({selected.size}/{members.length})
                     </label>
                     {loading ? (
-                        <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">Loading members…</p>
+                        <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 mt-2">Loading members…</p>
                     ) : members.length === 0 ? (
-                        <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">This group has no mentees yet.</p>
+                        <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 mt-2">This group has no mentees yet.</p>
                     ) : (
                         <div className="mt-2 max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
                             {members.map((m) => {
@@ -922,17 +922,17 @@ function AssignToGroupModal({
                                         key={m.id}
                                         onClick={() => toggleMember(m.id)}
                                         className={`w-full flex items-center gap-3 rounded-lg p-2.5 text-left transition-all ${
-                                            checked ? "bg-[rgba(255,181,157,0.1)] border border-[rgba(255,181,157,0.4)]" : "bg-white/5 border border-transparent hover:bg-white/[0.07]"
+                                            checked ? "bg-[color:var(--dash-accent-wash)] border border-[color:var(--dash-accent-line)]" : "bg-[color:var(--dash-surface-sunken)] border border-transparent hover:bg-white/[0.07]"
                                         }`}
                                     >
                                         <span
                                             className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
-                                                checked ? "bg-[#f47144] border-[#f47144]" : "border-white/20"
+                                                checked ? "bg-[color:var(--dash-accent)] border-[color:var(--dash-accent)]" : "border-white/20"
                                             }`}
                                         >
-                                            {checked && <span className="material-symbols-outlined text-[14px] text-[#5d1800]">check</span>}
+                                            {checked && <span className="material-symbols-outlined text-[14px] text-[color:var(--dash-content-on-accent)]">check</span>}
                                         </span>
-                                        <span className="text-[13px] text-[#e5e1e4] truncate">{m.name}</span>
+                                        <span className="text-[13px] text-[color:var(--dash-content-primary)] truncate">{m.name}</span>
                                     </button>
                                 );
                             })}
@@ -940,7 +940,7 @@ function AssignToGroupModal({
                     )}
                 </div>
                 <div>
-                    <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                    <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                         Problem URL
                     </label>
                     <input
@@ -950,19 +950,19 @@ function AssignToGroupModal({
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                     />
-                    <p className="text-[11px] text-[#dfc0b6] opacity-60 mt-1">
+                    <p className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-60 mt-1">
                         Assigns to the selected members above. Supports LeetCode, Codeforces, and AtCoder links.
                     </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                             Due date (optional)
                         </label>
                         <input type="date" className="auth-input w-full mt-1" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                     </div>
                     <div>
-                        <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                             Note (optional)
                         </label>
                         <input className="auth-input w-full mt-1" placeholder="Focus on the two-pointer approach" value={note} onChange={(e) => setNote(e.target.value)} />
@@ -972,12 +972,12 @@ function AssignToGroupModal({
                     type="button"
                     disabled={busy || !url.trim() || selected.size === 0}
                     onClick={() => void handleAssign()}
-                    className="self-start inline-flex items-center gap-2 py-2.5 px-5 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                    className="self-start inline-flex items-center gap-2 py-2.5 px-5 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                 >
                     <span className={`material-symbols-outlined ${busy ? "animate-spin" : ""}`}>{busy ? "progress_activity" : "assignment_turned_in"}</span>
                     {busy ? "Assigning…" : `Assign to ${selected.size} mentee${selected.size === 1 ? "" : "s"}`}
                 </button>
-                {message && <p className={`text-[13px] ${message.ok ? "text-[#4edea3]" : "text-[#ffb59d]"}`}>{message.text}</p>}
+                {message && <p className={`text-[13px] ${message.ok ? "text-[color:var(--dash-feedback-success)]" : "text-[color:var(--dash-accent-soft)]"}`}>{message.text}</p>}
             </div>
         </ModalShell>
     );
@@ -1061,13 +1061,13 @@ export function NoteModal({
             <div className="flex flex-col gap-3">
                 {target.kind === "group" && (
                     <div>
-                        <label className="text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        <label className="text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
                             Send to ({selected.size}/{members.length})
                         </label>
                         {loadingMembers ? (
-                            <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">Loading members…</p>
+                            <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 mt-2">Loading members…</p>
                         ) : members.length === 0 ? (
-                            <p className="text-[13px] text-[#dfc0b6] opacity-70 mt-2">This group has no mentees yet.</p>
+                            <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 mt-2">This group has no mentees yet.</p>
                         ) : (
                             <div className="mt-2 max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
                                 {members.map((m) => {
@@ -1079,18 +1079,18 @@ export function NoteModal({
                                             onClick={() => toggleMember(m.id)}
                                             className={`w-full flex items-center gap-3 rounded-lg p-2.5 text-left transition-all ${
                                                 checked
-                                                    ? "bg-[rgba(255,181,157,0.1)] border border-[rgba(255,181,157,0.4)]"
-                                                    : "bg-white/5 border border-transparent hover:bg-white/[0.07]"
+                                                    ? "bg-[color:var(--dash-accent-wash)] border border-[color:var(--dash-accent-line)]"
+                                                    : "bg-[color:var(--dash-surface-sunken)] border border-transparent hover:bg-white/[0.07]"
                                             }`}
                                         >
                                             <span
                                                 className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
-                                                    checked ? "bg-[#f47144] border-[#f47144]" : "border-white/20"
+                                                    checked ? "bg-[color:var(--dash-accent)] border-[color:var(--dash-accent)]" : "border-white/20"
                                                 }`}
                                             >
-                                                {checked && <span className="material-symbols-outlined text-[14px] text-[#5d1800]">check</span>}
+                                                {checked && <span className="material-symbols-outlined text-[14px] text-[color:var(--dash-content-on-accent)]">check</span>}
                                             </span>
-                                            <span className="text-[13px] text-[#e5e1e4] truncate">{m.name}</span>
+                                            <span className="text-[13px] text-[color:var(--dash-content-primary)] truncate">{m.name}</span>
                                         </button>
                                     );
                                 })}
@@ -1106,7 +1106,7 @@ export function NoteModal({
                     onChange={(e) => setBody(e.target.value)}
                 />
                 {target.kind === "group" && (
-                    <p className="text-[11px] text-[#dfc0b6] opacity-60">
+                    <p className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-60">
                         This sends the same message individually to each selected mentee.
                     </p>
                 )}
@@ -1114,12 +1114,12 @@ export function NoteModal({
                     type="button"
                     disabled={busy || !body.trim() || (target.kind === "group" && selected.size === 0)}
                     onClick={() => void handleSend()}
-                    className="self-start inline-flex items-center gap-2 py-2.5 px-5 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                    className="self-start inline-flex items-center gap-2 py-2.5 px-5 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                 >
                     <span className={`material-symbols-outlined ${busy ? "animate-spin" : ""}`}>{busy ? "progress_activity" : "send"}</span>
                     {busy ? "Sending…" : "Send message"}
                 </button>
-                {message && <p className={`text-[13px] ${message.ok ? "text-[#4edea3]" : "text-[#ffb59d]"}`}>{message.text}</p>}
+                {message && <p className={`text-[13px] ${message.ok ? "text-[color:var(--dash-feedback-success)]" : "text-[color:var(--dash-accent-soft)]"}`}>{message.text}</p>}
             </div>
         </ModalShell>
     );
@@ -1143,8 +1143,8 @@ export function ModalShell({ title, onClose, children }: { title: string; onClos
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-[20px] font-semibold text-[#e5e1e4]">{title}</h2>
-                    <button type="button" onClick={onClose} className="text-[#dfc0b6] hover:text-white transition-colors" aria-label="Close">
+                    <h2 className="text-[20px] font-semibold text-[color:var(--dash-content-primary)]">{title}</h2>
+                    <button type="button" onClick={onClose} className="text-[color:var(--dash-content-secondary)] hover:text-white transition-colors" aria-label="Close">
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
@@ -1161,11 +1161,11 @@ export function ModalShell({ title, onClose, children }: { title: string; onClos
 function SentInvitesList({ invites }: { invites: SentInvite[] }) {
     return (
         <div className="glass-card rounded-xl p-6">
-            <h2 className="text-[18px] font-semibold text-[#e5e1e4] mb-4">Sent invitations</h2>
+            <h2 className="text-[18px] font-semibold text-[color:var(--dash-content-primary)] mb-4">Sent invitations</h2>
             <div className="space-y-2">
                 {invites.map((inv) => (
-                    <div key={inv.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                        <span className="text-[14px] text-[#e5e1e4] truncate">{inv.inviteeEmail}</span>
+                    <div key={inv.id} className="flex items-center justify-between py-2 border-b border-[color:var(--dash-border-subtle)] last:border-0">
+                        <span className="text-[14px] text-[color:var(--dash-content-primary)] truncate">{inv.inviteeEmail}</span>
                         <span className={`text-[12px] font-semibold uppercase tracking-wide ${statusColor(inv.status)}`}>
                             {inv.status}
                         </span>
@@ -1179,12 +1179,12 @@ function SentInvitesList({ invites }: { invites: SentInvite[] }) {
 function statusColor(status: SentInvite["status"]): string {
     switch (status) {
         case "accepted":
-            return "text-[#4edea3]";
+            return "text-[color:var(--dash-feedback-success)]";
         case "declined":
         case "expired":
-            return "text-[#dfc0b6] opacity-60";
+            return "text-[color:var(--dash-content-secondary)] opacity-60";
         default:
-            return "text-[#ffb59d]";
+            return "text-[color:var(--dash-accent-soft)]";
     }
 }
 
@@ -1265,7 +1265,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
         <ModalShell title="Invite a mentee" onClose={() => !busy && onClose()}>
             <div className="relative">
                 {busy && (
-                    <div className="absolute -inset-2 z-10 flex items-center justify-center bg-[rgba(9,9,11,0.82)] backdrop-blur-sm rounded-xl">
+                    <div className="absolute -inset-2 z-10 flex items-center justify-center bg-[color:var(--dash-surface-overlay)] backdrop-blur-sm rounded-xl">
                         <LoadingCard title="Sending invite…" subtitle="This will only take a moment" size="sm" />
                     </div>
                 )}
@@ -1286,18 +1286,18 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
                         onChange={(e) => setQuery(e.target.value)}
                     />
                     <div className="mt-3 max-h-[280px] overflow-y-auto space-y-2">
-                        {searching && <p className="text-[13px] text-[#dfc0b6] opacity-70 py-2">Searching…</p>}
+                        {searching && <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 py-2">Searching…</p>}
                         {!searching && query.trim().length >= 2 && results.length === 0 && (
-                            <p className="text-[13px] text-[#dfc0b6] opacity-70 py-2">No users found.</p>
+                            <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 py-2">No users found.</p>
                         )}
                         {results.map((u) => (
-                            <div key={u.userId} className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
-                                <div className="w-9 h-9 rounded-full bg-[#353437] flex items-center justify-center shrink-0">
-                                    <span className="text-[#ffb59d] font-bold">{u.name.charAt(0).toUpperCase()}</span>
+                            <div key={u.userId} className="flex items-center gap-3 bg-[color:var(--dash-surface-sunken)] rounded-lg p-3">
+                                <div className="w-9 h-9 rounded-full bg-[color:var(--dash-surface-hover)] flex items-center justify-center shrink-0">
+                                    <span className="text-[color:var(--dash-accent-soft)] font-bold">{u.name.charAt(0).toUpperCase()}</span>
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-[14px] text-[#e5e1e4] truncate">{u.name}</p>
-                                    <p className="text-[11px] text-[#dfc0b6] opacity-70 truncate">
+                                    <p className="text-[14px] text-[color:var(--dash-content-primary)] truncate">{u.name}</p>
+                                    <p className="text-[11px] text-[color:var(--dash-content-secondary)] opacity-70 truncate">
                                         {Object.entries(u.handles).map(([p, h]) => `${p}: ${h}`).join("  ·  ") || "No handles"}
                                     </p>
                                 </div>
@@ -1320,7 +1320,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
                         type="button"
                         disabled={busy || !email.includes("@")}
                         onClick={() => void invite({ email })}
-                        className="inline-flex items-center justify-center gap-2 py-2.5 px-4 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-2 py-2.5 px-4 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                     >
                         <span className={`material-symbols-outlined ${busy ? "animate-spin" : ""}`}>{busy ? "progress_activity" : "send"}</span>
                         Send invite
@@ -1328,18 +1328,18 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
                 </div>
             )}
 
-            {message && <p className="text-[13px] text-[#dfc0b6] mt-3">{message}</p>}
+            {message && <p className="text-[13px] text-[color:var(--dash-content-secondary)] mt-3">{message}</p>}
 
             {/* Shareable invite link — always available as a fallback to email. */}
             {inviteUrl && (
-                <div className="mt-3 flex items-center gap-2 bg-white/5 rounded-lg p-2">
-                    <span className="text-[12px] text-[#dfc0b6] truncate flex-1 px-1" title={inviteUrl}>
+                <div className="mt-3 flex items-center gap-2 bg-[color:var(--dash-surface-sunken)] rounded-lg p-2">
+                    <span className="text-[12px] text-[color:var(--dash-content-secondary)] truncate flex-1 px-1" title={inviteUrl}>
                         {inviteUrl}
                     </span>
                     <button
                         type="button"
                         onClick={() => void copyLink()}
-                        className="shrink-0 inline-flex items-center gap-1 py-1.5 px-3 rounded-lg border border-[rgba(255,181,157,0.4)] text-[#ffb59d] text-[12px] font-semibold hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all"
+                        className="shrink-0 inline-flex items-center gap-1 py-1.5 px-3 rounded-lg border border-[color:var(--dash-accent-line)] text-[color:var(--dash-accent-soft)] text-[12px] font-semibold hover:bg-[color:var(--dash-accent-wash)] active:scale-95 transition-all"
                     >
                         <span className="material-symbols-outlined text-[16px]">{copied ? "check" : "content_copy"}</span>
                         {copied ? "Copied" : "Copy link"}
@@ -1358,7 +1358,7 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
             type="button"
             onClick={onClick}
             className={`flex-1 inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[13px] font-semibold transition-all ${
-                active ? "bg-[rgba(255,181,157,0.12)] text-[#ffb59d]" : "text-[#dfc0b6] hover:bg-white/5"
+                active ? "bg-[color:var(--dash-accent-wash)] text-[color:var(--dash-accent-soft)]" : "text-[color:var(--dash-content-secondary)] hover:bg-[color:var(--dash-surface-sunken)]"
             }`}
         >
             <span className="material-symbols-outlined text-[18px]">{icon}</span>
@@ -1369,17 +1369,17 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
 
 function InviteRowButton({ user, busy, onInvite }: { user: UserSearchResult; busy: boolean; onInvite: () => void }) {
     if (user.alreadyConnected) {
-        return <span className="text-[12px] text-[#4edea3] font-semibold shrink-0">Connected</span>;
+        return <span className="text-[12px] text-[color:var(--dash-feedback-success)] font-semibold shrink-0">Connected</span>;
     }
     if (user.invitePending) {
-        return <span className="text-[12px] text-[#dfc0b6] opacity-70 shrink-0">Invited</span>;
+        return <span className="text-[12px] text-[color:var(--dash-content-secondary)] opacity-70 shrink-0">Invited</span>;
     }
     return (
         <button
             type="button"
             disabled={busy}
             onClick={onInvite}
-            className="shrink-0 inline-flex items-center gap-1 py-1.5 px-3 rounded-lg border border-[rgba(255,181,157,0.4)] text-[#ffb59d] text-[13px] font-semibold hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all disabled:opacity-50"
+            className="shrink-0 inline-flex items-center gap-1 py-1.5 px-3 rounded-lg border border-[color:var(--dash-accent-line)] text-[color:var(--dash-accent-soft)] text-[13px] font-semibold hover:bg-[color:var(--dash-accent-wash)] active:scale-95 transition-all disabled:opacity-50"
         >
             <span className="material-symbols-outlined text-[16px]">add</span>
             Invite

@@ -25,6 +25,8 @@ export interface StreakData {
   last7DaysChange: number;
   /** Per-day solved count for last 7 days (index 0 = 6 days ago, index 6 = today) */
   last7DaysBreakdown: number[];
+  /** Per-platform split of each day in last7DaysBreakdown (same indexing) */
+  last7DaysBreakdownByPlatform: PlatformCounts[];
   last7DaysByPlatform: PlatformCounts;
   solvedThisMonth: number;
   last30DaysByPlatform: PlatformCounts;

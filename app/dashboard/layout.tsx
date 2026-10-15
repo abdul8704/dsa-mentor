@@ -19,8 +19,8 @@ export default async function DashboardLayout({
   return (
     <div className="dashboard-shell">
       <Sidebar initialInvites={pendingInvites} />
-      <main className="lg:ml-[280px] pt-20 lg:pt-8 pb-12 px-4 lg:px-10 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+      <main className="lg:ml-[248px] pt-20 lg:pt-8 pb-12 px-4 lg:px-8 min-h-screen">
+        <div className="max-w-[1400px] mx-auto">
           {children}
         </div>
       </main>

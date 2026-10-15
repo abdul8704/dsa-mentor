@@ -16,7 +16,7 @@ function PageNumberLink({ page, href, isActive }: { page: number; href: string; 
       href={href}
       aria-current={isActive ? "page" : undefined}
       className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-[13px] font-semibold transition-all ${
-        isActive ? "bg-[#f47144] text-[#5d1800]" : "text-[#dfc0b6] hover:bg-white/5"
+        isActive ? "bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)]" : "text-[color:var(--dash-content-secondary)] hover:bg-[color:var(--dash-surface-sunken)]"
       }`}
       style={{ fontFamily: "var(--font-geist-mono)" }}
     >
@@ -31,7 +31,7 @@ function PageArrowLink({ href, disabled, label, icon }: { href?: string; disable
       <span
         aria-label={label}
         aria-disabled="true"
-        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#4a4348] cursor-not-allowed"
+        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[color:var(--dash-border-strong)] cursor-not-allowed"
       >
         <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
           {icon}
@@ -44,7 +44,7 @@ function PageArrowLink({ href, disabled, label, icon }: { href?: string; disable
     <Link
       href={href}
       aria-label={label}
-      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#dfc0b6] hover:bg-white/5 transition-colors"
+      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[color:var(--dash-content-secondary)] hover:bg-[color:var(--dash-surface-sunken)] transition-colors"
     >
       <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
         {icon}
@@ -80,7 +80,7 @@ export default function ProblemsPagination({ currentPage, totalPages, totalCount
 
   return (
     <div className="glass-card rounded-xl px-5 py-4 flex flex-wrap items-center justify-between gap-4">
-      <span className="text-[12px] text-[#a78b82]" style={{ fontFamily: "var(--font-geist-mono)" }}>
+      <span className="text-[12px] text-[color:var(--dash-content-tertiary)]" style={{ fontFamily: "var(--font-geist-mono)" }}>
         Showing {startItem}–{endItem} of {totalCount}
       </span>
 
@@ -91,7 +91,7 @@ export default function ProblemsPagination({ currentPage, totalPages, totalCount
           {pageNumbers[0] > 1 && (
             <>
               <PageNumberLink page={1} href={hrefForPage(1)} isActive={currentPage === 1} />
-              {pageNumbers[0] > 2 && <span className="px-1 text-[#a78b82]">…</span>}
+              {pageNumbers[0] > 2 && <span className="px-1 text-[color:var(--dash-content-tertiary)]">…</span>}
             </>
           )}
 
@@ -101,7 +101,7 @@ export default function ProblemsPagination({ currentPage, totalPages, totalCount
 
           {pageNumbers[pageNumbers.length - 1] < totalPages && (
             <>
-              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="px-1 text-[#a78b82]">…</span>}
+              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="px-1 text-[color:var(--dash-content-tertiary)]">…</span>}
               <PageNumberLink page={totalPages} href={hrefForPage(totalPages)} isActive={currentPage === totalPages} />
             </>
           )}

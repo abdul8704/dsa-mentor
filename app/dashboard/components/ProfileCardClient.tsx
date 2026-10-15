@@ -4,7 +4,8 @@ import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import type { UserProfile, StreakData } from "@/app/lib/types/analytics";
-import PlatformBreakdown from "./PlatformBreakdown";
+import { PlatformLogo, platformMeta } from "./ui/platforms";
+import { ripple, spotlight } from "./ui/interaction";
 
 interface ProfileCardProps {
   profile?: UserProfile | null;
@@ -12,6 +13,10 @@ interface ProfileCardProps {
   userId?: string;
   /** Public page: no refresh button, and no placeholder stats when streak is hidden. */
   readOnly?: boolean;
+  /** All-time solved across platforms (difficulty.all.total). Hidden when undefined. */
+  allTimeSolved?: number;
+  /** Platforms the user has data on, shown as logos. */
+  platforms?: string[];
 }
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -21,15 +26,13 @@ const DEFAULT_PROFILE: UserProfile = {
   level: 7,
 };
 
-const DEFAULT_STREAK: Pick<StreakData, "currentStreak" | "solvedToday" | "solvedTodayByPlatform"> = {
-  currentStreak: 124,
-  solvedToday: 14,
-  solvedTodayByPlatform: { leetcode: 9, codeforces: 3, atcoder: 0, cses: 2 },
-};
-
-export default function ProfileCardClient({ profile, streak, userId, readOnly = false }: ProfileCardProps) {
+/**
+ * Identity strip across the top of the dashboard: avatar, name, level, title,
+ * all-time solved, connected platforms, and "Refresh all platforms".
+ * Streak and today's count live in the KPI tiles right below it.
+ */
+export default function ProfileCardClient({ profile, userId, readOnly = false, allTimeSolved, platforms = [] }: ProfileCardProps) {
   const p = profile ?? DEFAULT_PROFILE;
-  const s = readOnly ? streak : streak ?? DEFAULT_STREAK;
   const router = useRouter();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -62,74 +65,91 @@ export default function ProfileCardClient({ profile, streak, userId, readOnly = 
   }
 
   return (
-    <div className="glass-card rounded-xl p-6 lg:p-8 flex flex-col sm:flex-row items-center gap-6 lg:gap-8 group">
-      {/* Avatar */}
-      <div className="relative flex-shrink-0">
-        <div className="absolute -inset-1 bg-gradient-to-tr from-[#ffb59d] to-transparent rounded-full blur opacity-25 group-hover:opacity-50 transition-opacity" />
-        <div className="relative w-20 h-20 lg:w-24 lg:h-24 rounded-full border-2 border-[rgba(255,181,157,0.4)] p-1 bg-[#353437] flex items-center justify-center overflow-hidden">
-          {p.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- external S3 URL, avoids next/image domain config for a small avatar
-            <img src={p.avatarUrl} alt={p.name} className="w-full h-full rounded-full object-cover" />
-          ) : (
-            <span className="text-3xl lg:text-4xl font-bold text-[#ffb59d]">
-              {p.name.charAt(0)}
-            </span>
-          )}
-        </div>
-        <div className="absolute -bottom-1 -right-1 bg-[#ffb59d] text-[#5d1800] font-bold px-2 py-0.5 rounded text-[10px] tracking-tighter">
-          L{p.level}
+    <section
+      className="dash-card dash-hero dash-spot !flex-row flex-wrap items-center !gap-x-6 !gap-y-4"
+      onPointerMove={spotlight}
+      aria-label="Profile"
+    >
+      {/* Avatar with gradient ring */}
+      <div className="relative flex-none group">
+        <div
+          className="w-16 h-16 rounded-full p-[2px] transition-transform duration-[var(--dash-dur-base)] ease-[var(--dash-ease)] group-hover:rotate-6 group-hover:scale-105"
+          style={{ background: "var(--dash-grad-accent)" }}
+        >
+          <div className="w-full h-full rounded-full overflow-hidden grid place-items-center bg-[color:var(--dash-surface-sunken)]">
+            {p.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external S3 URL, avoids next/image domain config for a small avatar
+              <img src={p.avatarUrl} alt={p.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl font-extrabold text-[color:var(--dash-accent-soft)]">{p.name.charAt(0)}</span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Info */}
-      <div className="flex-1 text-center sm:text-left">
-        <h2 className="text-[24px] lg:text-[32px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#e5e1e4]" style={{ fontFamily: "var(--font-geist-sans)" }}>
-          {p.name}
-        </h2>
-        <p className="text-[#dfc0b6] text-[16px] opacity-80 mt-1">
-          {p.title}
-        </p>
-        {s && (
-        <div className="flex flex-wrap justify-center gap-4 mt-4">
-          <div className="bg-white/5 rounded-lg px-4 py-3 flex flex-col">
-            <span className="text-[12px] tracking-[0.05em] font-medium uppercase text-[#dfc0b6]" style={{ fontFamily: "var(--font-geist-mono)" }}>
-              Current Streak
-            </span>
-            <span className="text-[24px] lg:text-[32px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#ffb59d]" style={{ fontFamily: "var(--font-geist-sans)" }}>
-              {s.currentStreak} Days
-            </span>
-          </div>
-          <div className="bg-white/5 rounded-lg px-4 py-3 flex flex-col">
-            <span className="text-[12px] tracking-[0.05em] font-medium uppercase text-[#dfc0b6]" style={{ fontFamily: "var(--font-geist-mono)" }}>
-              Solved Today
-            </span>
-            <span className="text-[24px] lg:text-[32px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#4edea3]" style={{ fontFamily: "var(--font-geist-sans)" }}>
-              {s.solvedToday}
-            </span>
-            <PlatformBreakdown counts={s.solvedTodayByPlatform} className="mt-1" />
-          </div>
+      <div className="relative z-[1] flex-1 min-w-[180px]">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-xl font-extrabold tracking-[-0.02em] text-[color:var(--dash-content-primary)]">{p.name}</h2>
+          <span
+            className="dash-num text-[11px] font-semibold px-2 py-0.5 rounded-full text-[color:var(--dash-content-on-accent)]"
+            style={{ background: "var(--dash-grad-accent)" }}
+            title={`Level ${p.level}`}
+          >
+            L{p.level}
+          </span>
         </div>
+        <p className="text-sm text-[color:var(--dash-content-secondary)] mt-0.5">{p.title}</p>
+      </div>
+
+      <div className="relative z-[1] flex flex-wrap items-center gap-x-8 gap-y-3">
+        {allTimeSolved !== undefined && (
+          <div>
+            <div className="dash-label">All-time solved</div>
+            <div className="dash-num text-xl font-semibold text-[color:var(--dash-content-primary)]">
+              {allTimeSolved.toLocaleString()}
+            </div>
+          </div>
+        )}
+        {platforms.length > 0 && (
+          <div>
+            <div className="dash-label">Platforms</div>
+            <ul className="flex items-center gap-2 mt-1.5" aria-label={platforms.map((k) => platformMeta(k).name).join(", ")}>
+              {platforms.map((k) => (
+                <li
+                  key={k}
+                  title={platformMeta(k).name}
+                  className="w-8 h-8 grid place-items-center rounded-[var(--dash-r-sm)] bg-[color:var(--dash-surface-sunken)] border border-[color:var(--dash-border-subtle)] transition-transform duration-[var(--dash-dur-fast)] hover:-translate-y-0.5 hover:border-[color:var(--dash-accent-line)]"
+                >
+                  <PlatformLogo platform={k} size={18} />
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {!readOnly && (
-        <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void handleRefreshAll()}
-            disabled={isRefreshing}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-[rgba(255,181,157,0.4)] text-[#ffb59d] text-[14px] font-semibold hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <span className={`material-symbols-outlined text-[18px] ${isRefreshing ? "animate-spin" : ""}`}>
-              refresh
-            </span>
-            <span>{isRefreshing ? "Refreshing platforms…" : "Refresh all platforms"}</span>
-          </button>
-          {refreshMessage && (
-            <span className="text-[12px] text-[#dfc0b6] opacity-80">{refreshMessage}</span>
-          )}
-        </div>
+          <div className="flex flex-col items-start gap-1.5">
+            <button
+              type="button"
+              onClick={() => void handleRefreshAll()}
+              onPointerDown={ripple}
+              disabled={isRefreshing}
+              aria-busy={isRefreshing}
+              className="dash-btn dash-btn-primary min-w-[196px]"
+            >
+              <span className={`material-symbols-outlined text-[18px] ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true">
+                refresh
+              </span>
+              <span>{isRefreshing ? "Refreshing platforms…" : "Refresh all platforms"}</span>
+            </button>
+            {refreshMessage && (
+              <span role="status" className="text-xs text-[color:var(--dash-content-secondary)]">
+                {refreshMessage}
+              </span>
+            )}
+          </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

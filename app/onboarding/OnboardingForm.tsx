@@ -1,6 +1,5 @@
 "use client";
 
-import { Bricolage_Grotesque, Space_Grotesk } from "next/font/google";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getBrowserClient } from "@/app/lib/supabase/browser-client";
@@ -10,18 +9,12 @@ import ConnectCsesForm from "../dashboard/components/ConnectCsesForm";
 import ConnectLeetcodeForm from "../dashboard/components/ConnectLeetcodeForm";
 import PublicApiSettings from "../dashboard/components/PublicApiSettings";
 import ConnectedWidgets from "../dashboard/components/ConnectedWidgets";
+import Card from "../dashboard/components/ui/Card";
+import { PlatformLogo } from "../dashboard/components/ui/platforms";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-
-const headingFont = Bricolage_Grotesque({
-    subsets: ["latin"],
-    weight: ["500", "700"],
-});
-
-const bodyFont = Space_Grotesk({
-    subsets: ["latin"],
-    weight: ["400", "500", "700"],
-});
+import Logo from "../components/brand/Logo";
 
 type PlatformKey = "leetcode" | "codeforces" | "atcoder";
 
@@ -58,7 +51,7 @@ const PLATFORM_FIELDS: Array<{
 }> = [
     { key: "leetcode", label: "LeetCode", placeholder: "your_leetcode_username" },
     { key: "codeforces", label: "Codeforces", placeholder: "your_codeforces_handle" },
-    { key: "atcoder", label: "Atcoder", placeholder: "your_atcoder_handle" },
+    { key: "atcoder", label: "AtCoder", placeholder: "your_atcoder_handle" },
 ];
 
 const LOADING_MESSAGES = [
@@ -82,7 +75,7 @@ export default function OnboardingForm({
 }: {
     platforms: { platform: string; handle: string }[] | null;
     profile: ProfileState;
-    /** True when reached via the "Settings" link (/onboarding?edit=1) rather than first-time setup. */
+    /** True when reached via the "Settings" link (/dashboard/settings) rather than first-time setup. */
     isEditing?: boolean;
 }) {
     const supabase = getBrowserClient();
@@ -407,15 +400,15 @@ export default function OnboardingForm({
     const loadingOverlay =
         isMounted && isInitializing
             ? createPortal(
-                  <div className="onboarding-loading-overlay" role="status" aria-live="polite" aria-busy="true">
-                      <div className="onboarding-loading-card">
-                          <div className="onboarding-loading-spinner-wrap" aria-hidden="true">
-                              <span className="onboarding-loading-spinner" />
+                  <div className="dash-portal" role="status" aria-live="polite" aria-busy="true">
+                      <div className="dash-modal">
+                          <div className="dash-modal-icon" aria-hidden="true">
+                              <span className="dash-spinner" style={{ width: 22, height: 22 }} />
                           </div>
-                          <p className={`${headingFont.className} onboarding-loading-title`}>
+                          <p className="text-lg font-bold text-[color:var(--dash-content-primary)]">
                               {LOADING_MESSAGES[loadingMessageIndex]}
                           </p>
-                          <p className="onboarding-loading-copy">
+                          <p className="mt-1.5 text-sm text-[color:var(--dash-content-secondary)]">
                               Hang tight while we verify your handles.
                           </p>
                       </div>
@@ -429,17 +422,15 @@ export default function OnboardingForm({
     const syncModal =
         isMounted && syncResult
             ? createPortal(
-                  <div className="auth-modal-overlay" role="presentation">
-                      <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="sync-modal-title">
-                          <div className={`auth-modal-icon ${hasVerifiedHandle ? "auth-modal-icon--pending" : "auth-modal-icon--warning"}`} aria-hidden>
-                              <span className="material-symbols-outlined">
-                                  {hasVerifiedHandle ? "cloud_sync" : "error"}
-                              </span>
+                  <div className="dash-portal" role="presentation">
+                      <div className="dash-modal" role="dialog" aria-modal="true" aria-labelledby="sync-modal-title">
+                          <div className="dash-modal-icon" data-tone={hasVerifiedHandle ? undefined : "warning"} aria-hidden>
+                              <span className="material-symbols-outlined">{hasVerifiedHandle ? "cloud_sync" : "error"}</span>
                           </div>
-                          <h2 id="sync-modal-title" className={`${headingFont.className} auth-modal-title`}>
-                              {hasVerifiedHandle ? "Handles saved — syncing your data" : "We couldn't verify your handle"}
+                          <h2 id="sync-modal-title" className="text-lg font-bold text-[color:var(--dash-content-primary)]">
+                              {hasVerifiedHandle ? "Handles saved, syncing your data" : "We couldn't verify your handle"}
                           </h2>
-                          <p className="auth-modal-copy">
+                          <p className="mt-2 text-sm leading-relaxed text-[color:var(--dash-content-secondary)]">
                               {syncResult.unreachable
                                   ? "We couldn't reach the sync service right now, but your handles are saved. We'll pick up the import automatically."
                                   : hasVerifiedHandle
@@ -447,19 +438,22 @@ export default function OnboardingForm({
                                     : "None of the handles you entered could be found on their platform. Double-check the spelling from Settings and save again."}
                           </p>
                           {syncResult.invalid.length > 0 && (
-                              <ul className="auth-modal-list">
+                              <ul className="mt-3 flex flex-col gap-1.5 text-left text-[13px]">
                                   {syncResult.invalid.map((entry) => (
-                                      <li key={entry.platform}>
-                                          <strong>{entry.platform}</strong>: {entry.error ?? "handle not found"}
+                                      <li
+                                          key={entry.platform}
+                                          className="flex items-center gap-2 rounded-[var(--dash-r-md)] px-3 py-2 bg-[color:var(--dash-feedback-danger-wash)] text-[color:var(--dash-content-primary)]"
+                                      >
+                                          <PlatformLogo platform={entry.platform} size={14} />
+                                          <strong className="capitalize">{entry.platform}</strong>
+                                          <span className="text-[color:var(--dash-content-secondary)]">{entry.error ?? "handle not found"}</span>
                                       </li>
                                   ))}
                               </ul>
                           )}
-                          <div className="auth-modal-actions">
-                              <button type="button" className="auth-modal-button" onClick={dismissSyncModal}>
-                                  Continue to dashboard
-                              </button>
-                          </div>
+                          <button type="button" className="dash-btn dash-btn-primary w-full mt-5" onClick={dismissSyncModal}>
+                              Continue to dashboard
+                          </button>
                       </div>
                   </div>,
                   document.body
@@ -469,52 +463,51 @@ export default function OnboardingForm({
     const deleteAccountModal =
         isMounted && showDeleteConfirm
             ? createPortal(
-                  <div className="auth-modal-overlay" role="presentation" onClick={() => !isDeletingAccount && setShowDeleteConfirm(false)}>
+                  <div className="dash-portal" role="presentation" onClick={() => !isDeletingAccount && setShowDeleteConfirm(false)}>
                       <div
-                          className="auth-modal"
+                          className="dash-modal"
                           role="dialog"
                           aria-modal="true"
                           aria-labelledby="delete-account-modal-title"
                           onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                              if (e.key === "Escape" && !isDeletingAccount) setShowDeleteConfirm(false);
+                          }}
                       >
-                          <div className="auth-modal-icon auth-modal-icon--warning" aria-hidden>
+                          <div className="dash-modal-icon" data-tone="danger" aria-hidden>
                               <span className="material-symbols-outlined">warning</span>
                           </div>
-                          <h2 id="delete-account-modal-title" className={`${headingFont.className} auth-modal-title`}>
+                          <h2 id="delete-account-modal-title" className="text-lg font-bold text-[color:var(--dash-content-primary)]">
                               Delete your account?
                           </h2>
-                          <p className="auth-modal-copy">
-                              This permanently deletes your account and every piece of data tied to it — solved
-                              problems, streaks, contest history, platform handles, mentorships, notes, and your
-                              profile photo. This cannot be undone.
+                          <p className="mt-2 text-sm leading-relaxed text-[color:var(--dash-content-secondary)]">
+                              This permanently deletes your account and every piece of data tied to it: solved problems,
+                              streaks, contest history, platform handles, mentorships, notes, and your profile photo. This
+                              cannot be undone.
                           </p>
                           {deleteError && (
-                              <p className="onboarding-avatar-error" style={{ justifyContent: "center", marginTop: "0.85rem" }}>
-                                  <span className="material-symbols-outlined" aria-hidden="true">
+                              <p className="mt-3 flex items-center justify-center gap-1.5 text-[13px] text-[color:var(--dash-feedback-danger)]">
+                                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
                                       error
                                   </span>
                                   {deleteError}
                               </p>
                           )}
-                          <div className="auth-modal-actions auth-modal-actions-row">
+                          <div className="mt-5 grid grid-cols-2 gap-3">
                               <button
                                   type="button"
-                                  className="auth-modal-button auth-modal-button--ghost"
+                                  className="dash-btn dash-btn-ghost"
                                   onClick={() => setShowDeleteConfirm(false)}
                                   disabled={isDeletingAccount}
+                                  autoFocus
                               >
                                   Cancel
                               </button>
-                              <button
-                                  type="button"
-                                  className="auth-modal-button auth-modal-button--danger"
-                                  onClick={handleDeleteAccount}
-                                  disabled={isDeletingAccount}
-                              >
+                              <button type="button" className="dash-btn dash-btn-danger" onClick={handleDeleteAccount} disabled={isDeletingAccount}>
                                   {isDeletingAccount ? (
                                       <>
-                                          <span className="onboarding-spinner" aria-hidden="true" />
-                                          <span>Deleting…</span>
+                                          <span className="dash-spinner" aria-hidden="true" />
+                                          Deleting…
                                       </>
                                   ) : (
                                       "Delete permanently"
@@ -527,270 +520,363 @@ export default function OnboardingForm({
               )
             : null;
 
-    return (
-        <main className={`auth-shell onboarding-shell ${bodyFont.className}`}>
+    const hasAvatar = Boolean(avatarPreview || profileState.avatarUrl);
+
+    const profileCard = (
+        <Card title="Profile" hint="how mentors and your public page see you">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                <div
+                    className={`group relative w-24 h-24 flex-none rounded-full cursor-pointer transition-[transform,box-shadow] duration-[var(--dash-dur-base)] hover:scale-[1.03] ${
+                        isDraggingAvatar ? "ring-2 ring-[color:var(--dash-accent)] ring-offset-4 ring-offset-[color:var(--dash-surface-raised)]" : ""
+                    }`}
+                    style={{ background: "var(--dash-grad-accent)", padding: 2 }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload profile picture"
+                    onClick={() => avatarInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            avatarInputRef.current?.click();
+                        }
+                    }}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDraggingAvatar(true);
+                    }}
+                    onDragLeave={() => setIsDraggingAvatar(false)}
+                    onDrop={handleAvatarDrop}
+                >
+                    <div className="relative w-full h-full rounded-full overflow-hidden grid place-items-center bg-[color:var(--dash-surface-sunken)]">
+                        {hasAvatar ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- external/blob URL
+                            <img src={avatarPreview ?? profileState.avatarUrl} alt="Profile picture" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="text-3xl font-bold text-[color:var(--dash-content-secondary)]">
+                                {profileState.name.charAt(0).toUpperCase() || "?"}
+                            </span>
+                        )}
+                        <div
+                            className={`absolute inset-0 grid place-items-center bg-black/55 text-white transition-opacity duration-[var(--dash-dur-fast)] ${
+                                isUploadingAvatar ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                            }`}
+                        >
+                            {isUploadingAvatar ? (
+                                <span className="dash-spinner" aria-hidden="true" />
+                            ) : (
+                                <span className="material-symbols-outlined" aria-hidden="true">
+                                    photo_camera
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        className="sr-only"
+                        tabIndex={-1}
+                        onChange={handleAvatarSelected}
+                    />
+                </div>
+
+                <div className="flex flex-col gap-2 min-w-0">
+                    <p className="text-sm font-semibold text-[color:var(--dash-content-primary)]">Profile photo</p>
+                    <p className="text-xs text-[color:var(--dash-content-tertiary)]">
+                        {isUploadingAvatar
+                            ? "Uploading your photo…"
+                            : "Drag and drop, or click the photo. JPEG, PNG, WEBP or GIF, up to 5 MB."}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            className="dash-btn dash-btn-ghost dash-btn-sm"
+                            disabled={isUploadingAvatar}
+                            onClick={() => avatarInputRef.current?.click()}
+                        >
+                            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                                upload
+                            </span>
+                            {profileState.avatarUrl ? "Change photo" : "Upload photo"}
+                        </button>
+                        {profileState.avatarUrl && (
+                            <button
+                                type="button"
+                                className="dash-btn dash-btn-sm text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-feedback-danger)]"
+                                disabled={isUploadingAvatar || isRemovingAvatar}
+                                onClick={handleRemoveAvatar}
+                            >
+                                {isRemovingAvatar ? "Removing…" : "Remove"}
+                            </button>
+                        )}
+                    </div>
+                    {avatarError && (
+                        <p className="flex items-center gap-1.5 text-xs text-[color:var(--dash-feedback-danger)]" role="alert">
+                            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                                error
+                            </span>
+                            {avatarError}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="dash-field-label" htmlFor="profile-name">
+                        Name
+                    </label>
+                    <input
+                        className="dash-input"
+                        id="profile-name"
+                        name="name"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Your name"
+                        required
+                        value={profileState.name}
+                        onChange={(e) => updateProfileField("name", e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label className="dash-field-label" htmlFor="profile-description">
+                        Headline <span className="font-normal text-[color:var(--dash-content-tertiary)]">(optional)</span>
+                    </label>
+                    <input
+                        className="dash-input"
+                        id="profile-description"
+                        name="description"
+                        type="text"
+                        placeholder="e.g. Grinding for ICPC regionals"
+                        value={profileState.description}
+                        onChange={(e) => updateProfileField("description", e.target.value)}
+                    />
+                </div>
+            </div>
+        </Card>
+    );
+
+    const handlesCard = (
+        <Card
+            title="Platform handles"
+            hint="we sync solves, ratings and contests from these"
+            action={
+                <span className={`dash-chip ${userId ? "dash-chip-good" : "dash-chip-idle"}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
+                    {userId ? "Session ready" : "Waiting for session"}
+                </span>
+            }
+        >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {PLATFORM_FIELDS.map(({ key, label, placeholder }) => (
+                    <div key={key}>
+                        <label className="dash-field-label" htmlFor={key}>
+                            {label}
+                        </label>
+                        <div className="dash-input-wrap">
+                            <span className="dash-input-icon">
+                                <PlatformLogo platform={key} size={16} />
+                            </span>
+                            <input
+                                className="dash-input"
+                                id={key}
+                                name={key}
+                                type="text"
+                                autoCapitalize="none"
+                                autoCorrect="off"
+                                spellCheck={false}
+                                placeholder={placeholder}
+                                value={formState[key]}
+                                onChange={(e) => updateField(key, e.target.value)}
+                            />
+                        </div>
+                    </div>
+                ))}
+
+                <div>
+                    <label className="dash-field-label" htmlFor="cses">
+                        CSES
+                    </label>
+                    <div className="dash-input-wrap">
+                        <span className="dash-input-icon">
+                            <PlatformLogo platform="cses" size={16} />
+                        </span>
+                        <input
+                            className="dash-input"
+                            id="cses"
+                            name="cses"
+                            type="text"
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            placeholder="your_cses_username"
+                            value={csesUsername}
+                            onChange={(e) => setCsesUsername(e.target.value)}
+                        />
+                    </div>
+                    <p className="mt-1.5 text-xs leading-relaxed text-[color:var(--dash-content-tertiary)]">
+                        CSES has no public API, so this only saves your username. Connect your session or password{" "}
+                        {isEditing ? (
+                            <a href="#connections" className="text-[color:var(--dash-accent-soft)] hover:underline">
+                                below
+                            </a>
+                        ) : (
+                            "from Settings later"
+                        )}{" "}
+                        to import your solved problems.
+                    </p>
+                </div>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-4 border-t border-[color:var(--dash-border-subtle)]">
+                <p className="text-xs text-[color:var(--dash-content-tertiary)]" aria-live="polite">
+                    {status}
+                </p>
+                <button className="dash-btn dash-btn-primary sm:ml-auto min-w-[160px]" type="submit" disabled={isSubmitting || isInitializing}>
+                    {isSubmitting ? (
+                        <>
+                            <span className="dash-spinner" aria-hidden="true" />
+                            Saving…
+                        </>
+                    ) : isEditing ? (
+                        "Save changes"
+                    ) : (
+                        "Save and open dashboard"
+                    )}
+                </button>
+            </div>
+        </Card>
+    );
+
+    const modals = (
+        <>
             {loadingOverlay}
             {syncModal}
             {deleteAccountModal}
-            <div className="auth-grid" />
-            <div className="auth-spot auth-spot-left" />
-            <div className="auth-spot auth-spot-right" />
+        </>
+    );
 
-            <section className="auth-wrap onboarding-wrap">
-                <header className="auth-header onboarding-header">
-                    <p className="auth-kicker">DSA Mentor Setup</p>
-                    <h1 className={`${headingFont.className} auth-title`}>
-                        Connect your coding platforms
-                    </h1>
-                    <p className="auth-face-copy">
-                        Add your handles once. We will use them to power your tracker, rankings,
-                        and streaks.
-                    </p>
-                </header>
+    // ── First-time setup: a focused, centred page outside the dashboard. ──
+    if (!isEditing) {
+        return (
+            <main className="dashboard-shell relative overflow-hidden">
+                {modals}
+                <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 top-0 h-[420px]"
+                    style={{ background: "var(--dash-grad-hero)" }}
+                />
+                <div className="relative mx-auto max-w-[760px] px-4 py-10 md:py-16 flex flex-col gap-6">
+                    <Link href="/" className="inline-flex items-center gap-2.5 self-start">
+                        <Logo size={36} glow />
+                    </Link>
+                    <header className="flex flex-col gap-2">
+                        <span className="dash-chip dash-chip-accent self-start">One-time setup</span>
+                        <h1 className="text-[clamp(1.75rem,4vw,2.25rem)] font-bold leading-tight tracking-[-0.02em]">
+                            Connect your coding platforms
+                        </h1>
+                        <p className="text-[15px] text-[color:var(--dash-content-secondary)] max-w-[60ch]">
+                            Add your handles once. We pull your solves, ratings and contests from each platform and keep them
+                            in sync, so your dashboard is ready the moment the import finishes.
+                        </p>
+                    </header>
+                    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                        {profileCard}
+                        {handlesCard}
+                    </form>
+                </div>
+            </main>
+        );
+    }
 
-                <div className="auth-card-stage onboarding-stage">
-                    <article className="auth-card-face onboarding-card">
-                        <div className="onboarding-card-top">
-                            <div>
-                                <h2 className={`${headingFont.className} auth-face-title`}>
-                                    Platform handles
-                                </h2>
-                                <p className="auth-face-copy">
-                                    Save the handles you want to sync to your profile.
-                                </p>
-                            </div>
+    // ── Settings: lives inside the dashboard shell (sidebar + tokens). ──
+    const SECTIONS = [
+        { id: "profile", label: "Profile", icon: "person" },
+        { id: "handles", label: "Platform handles", icon: "link" },
+        { id: "connections", label: "Connections", icon: "sync_lock" },
+        { id: "public", label: "Public profile & API", icon: "public" },
+        { id: "danger", label: "Delete account", icon: "delete" },
+    ];
 
-                            <div className="onboarding-session-pill">
-                                {userId ? "Session ready" : "Waiting for session"}
-                            </div>
+    return (
+        <div className="flex flex-col gap-6">
+            {modals}
+            <header className="flex flex-col gap-1">
+                <h1 className="text-[clamp(1.5rem,3vw,1.875rem)] font-bold tracking-[-0.02em]">Settings</h1>
+                <p className="text-sm text-[color:var(--dash-content-secondary)]">
+                    Your profile, the platforms we sync, and what you share publicly.
+                </p>
+            </header>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[200px_minmax(0,1fr)] gap-6 items-start">
+                <nav aria-label="Settings sections" className="hidden xl:flex flex-col gap-0.5 sticky top-8">
+                    {SECTIONS.map((s) => (
+                        <a
+                            key={s.id}
+                            href={`#${s.id}`}
+                            className="dash-row flex items-center gap-2.5 px-3 min-h-[40px] text-[13px] font-semibold text-[color:var(--dash-content-secondary)] hover:text-[color:var(--dash-content-primary)]"
+                        >
+                            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                                {s.icon}
+                            </span>
+                            {s.label}
+                        </a>
+                    ))}
+                </nav>
+
+                <div className="flex flex-col gap-4 min-w-0 max-w-[920px]">
+                    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                        <div id="profile" className="scroll-mt-24">
+                            {profileCard}
                         </div>
-
-                        <form className="auth-form onboarding-form" onSubmit={handleSubmit}>
-                            <div className="onboarding-avatar-row">
-                                <div
-                                    className={`onboarding-avatar-dropzone${isDraggingAvatar ? " onboarding-avatar-dropzone-active" : ""}`}
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-label="Upload profile picture"
-                                    onClick={() => avatarInputRef.current?.click()}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                            e.preventDefault();
-                                            avatarInputRef.current?.click();
-                                        }
-                                    }}
-                                    onDragOver={(e) => {
-                                        e.preventDefault();
-                                        setIsDraggingAvatar(true);
-                                    }}
-                                    onDragLeave={() => setIsDraggingAvatar(false)}
-                                    onDrop={handleAvatarDrop}
-                                >
-                                    <div className="onboarding-avatar-preview">
-                                        {avatarPreview || profileState.avatarUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element -- external/blob URL
-                                            <img src={avatarPreview ?? profileState.avatarUrl} alt="Profile picture" />
-                                        ) : (
-                                            <span>{profileState.name.charAt(0).toUpperCase() || "?"}</span>
-                                        )}
-
-                                        <div className="onboarding-avatar-hover">
-                                            {isUploadingAvatar ? (
-                                                <span className="onboarding-spinner" aria-hidden="true" />
-                                            ) : (
-                                                <span className="material-symbols-outlined" aria-hidden="true">
-                                                    photo_camera
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        className="onboarding-avatar-badge"
-                                        aria-label="Change profile picture"
-                                        disabled={isUploadingAvatar}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            avatarInputRef.current?.click();
-                                        }}
-                                    >
-                                        <span className="material-symbols-outlined" aria-hidden="true">
-                                            edit
-                                        </span>
-                                    </button>
-
-                                    <input
-                                        ref={avatarInputRef}
-                                        type="file"
-                                        accept="image/png,image/jpeg,image/webp,image/gif"
-                                        className="onboarding-avatar-input"
-                                        onChange={handleAvatarSelected}
-                                    />
-                                </div>
-
-                                <div className="onboarding-avatar-actions">
-                                    <p className="onboarding-avatar-title">Profile photo</p>
-                                    <p className="onboarding-avatar-hint">
-                                        {isUploadingAvatar
-                                            ? "Uploading your photo…"
-                                            : "Drag & drop, or click the photo to upload. JPEG, PNG, WEBP, or GIF, up to 5 MB."}
-                                    </p>
-                                    <div className="onboarding-avatar-buttons">
-                                        <button
-                                            type="button"
-                                            className="onboarding-avatar-cta"
-                                            disabled={isUploadingAvatar}
-                                            onClick={() => avatarInputRef.current?.click()}
-                                        >
-                                            {profileState.avatarUrl ? "Change photo" : "Upload photo"}
-                                        </button>
-                                        {profileState.avatarUrl && (
-                                            <button
-                                                type="button"
-                                                className="onboarding-avatar-remove"
-                                                disabled={isUploadingAvatar || isRemovingAvatar}
-                                                onClick={handleRemoveAvatar}
-                                            >
-                                                {isRemovingAvatar ? "Removing..." : "Remove"}
-                                            </button>
-                                        )}
-                                    </div>
-                                    {avatarError && (
-                                        <p className="onboarding-avatar-error">
-                                            <span className="material-symbols-outlined" aria-hidden="true">
-                                                error
-                                            </span>
-                                            {avatarError}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="onboarding-grid onboarding-profile-grid">
-                                <div className="onboarding-field onboarding-field-full">
-                                    <label className="auth-label" htmlFor="profile-name">
-                                        Name
-                                    </label>
-                                    <input
-                                        className="auth-input"
-                                        id="profile-name"
-                                        name="name"
-                                        type="text"
-                                        placeholder="Your name"
-                                        required
-                                        value={profileState.name}
-                                        onChange={(e) => updateProfileField("name", e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="onboarding-field onboarding-field-full">
-                                    <label className="auth-label" htmlFor="profile-description">
-                                        Description
-                                    </label>
-                                    <input
-                                        className="auth-input"
-                                        id="profile-description"
-                                        name="description"
-                                        type="text"
-                                        placeholder="dsa enthusiast"
-                                        value={profileState.description}
-                                        onChange={(e) => updateProfileField("description", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="onboarding-grid">
-                                {PLATFORM_FIELDS.map(({ key, label, placeholder }) => (
-                                    <div key={key} className="onboarding-field">
-                                        <label className="auth-label" htmlFor={key}>
-                                            {label}
-                                        </label>
-                                        <input
-                                            className="auth-input"
-                                            id={key}
-                                            name={key}
-                                            type="text"
-                                            placeholder={placeholder}
-                                            value={formState[key]}
-                                            onChange={(e) => updateField(key, e.target.value)}
-                                        />
-                                    </div>
-                                ))}
-
-                                <div className="onboarding-field">
-                                    <label className="auth-label" htmlFor="cses">
-                                        CSES
-                                    </label>
-                                    <input
-                                        className="auth-input"
-                                        id="cses"
-                                        name="cses"
-                                        type="text"
-                                        placeholder="your_cses_username"
-                                        value={csesUsername}
-                                        onChange={(e) => setCsesUsername(e.target.value)}
-                                    />
-                                    <p className="onboarding-field-hint">
-                                        CSES has no public API — this just saves your username. Connect your
-                                        session or password from{" "}
-                                        <a href="/onboarding?edit=1" className="onboarding-inline-link">
-                                            Settings
-                                        </a>{" "}
-                                        to actually import your solved problems.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <button className="auth-cta onboarding-cta" type="submit" disabled={isSubmitting || isInitializing}>
-                                {isSubmitting ? (
-                                    <>
-                                        <span className="onboarding-spinner" aria-hidden="true" />
-                                        <span>Saving handles...</span>
-                                    </>
-                                ) : (
-                                    "Save handles"
-                                )}
-                            </button>
-                        </form>
-
-                        <div className="onboarding-footer">
-                            <p className="onboarding-status">{status}</p>
+                        <div id="handles" className="scroll-mt-24">
+                            {handlesCard}
                         </div>
+                    </form>
 
-                        {isEditing && userId && (
-                            <div className="onboarding-settings-section">
+                    {userId && (
+                        <>
+                            <div id="connections" className="scroll-mt-24 grid grid-cols-1 2xl:grid-cols-2 gap-4 [&>*]:h-full">
                                 <ConnectLeetcodeForm userId={userId} />
                                 <ConnectCsesForm userId={userId} />
+                            </div>
+                            <div id="public" className="scroll-mt-24 flex flex-col gap-4">
                                 <PublicApiSettings />
                                 <ConnectedWidgets />
                             </div>
-                        )}
+                        </>
+                    )}
 
-                        {isEditing && (
-                            <div className="onboarding-danger-zone">
-                                <div>
-                                    <p className="onboarding-danger-title">Delete account</p>
-                                    <p className="onboarding-danger-copy">
-                                        This will permanently delete your account and all your data — solved
-                                        problems, streaks, contests, mentorships, and notes. This cannot be undone.
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    className="onboarding-danger-button"
-                                    onClick={() => {
-                                        setDeleteError(null);
-                                        setShowDeleteConfirm(true);
-                                    }}
-                                >
-                                    Delete my account
-                                </button>
-                            </div>
-                        )}
-                    </article>
+                    <section
+                        id="danger"
+                        className="scroll-mt-24 dash-card"
+                        style={{ borderColor: "rgba(242, 97, 95, 0.35)" }}
+                        aria-labelledby="danger-title"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex-1">
+                            <h2 id="danger-title" className="dash-card-title text-[color:var(--dash-feedback-danger)]">
+                                Delete account
+                            </h2>
+                            <p className="mt-1 text-[13px] leading-relaxed text-[color:var(--dash-content-secondary)]">
+                                Permanently deletes your account and all your data: solved problems, streaks, contests,
+                                mentorships and notes. This cannot be undone.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            className="dash-btn dash-btn-danger"
+                            onClick={() => {
+                                setDeleteError(null);
+                                setShowDeleteConfirm(true);
+                            }}
+                        >
+                            Delete my account
+                        </button>
+                      </div>
+                    </section>
                 </div>
-            </section>
-        </main>
+            </div>
+        </div>
     );
 }

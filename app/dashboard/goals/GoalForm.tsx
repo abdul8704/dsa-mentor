@@ -17,7 +17,7 @@ const plusDays = (iso: string, n: number) => new Date(Date.parse(`${iso}T00:00:0
 
 function Label({ children }: { children: React.ReactNode }) {
     return (
-        <label className="block text-[12px] uppercase tracking-wide text-[#dfc0b6] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
+        <label className="block text-[12px] uppercase tracking-wide text-[color:var(--dash-content-secondary)] opacity-70" style={{ fontFamily: "var(--font-geist-mono)" }}>
             {children}
         </label>
     );
@@ -30,7 +30,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
             onClick={onClick}
             aria-pressed={active}
             className={`py-1.5 px-3 rounded-lg text-[13px] font-semibold transition-all active:scale-95 border ${
-                active ? "border-[#ffb59d] bg-[rgba(255,181,157,0.12)] text-[#ffb59d]" : "border-white/10 text-[#dfc0b6] hover:bg-white/5"
+                active ? "border-[color:var(--dash-accent-soft)] bg-[color:var(--dash-accent-wash)] text-[color:var(--dash-accent-soft)]" : "border-[color:var(--dash-border-subtle)] text-[color:var(--dash-content-secondary)] hover:bg-[color:var(--dash-surface-sunken)]"
             }`}
         >
             {children}
@@ -161,13 +161,13 @@ export default function GoalForm({
                         <label className="flex items-start gap-3 cursor-pointer">
                             <input
                                 type="checkbox"
-                                className="mt-1 accent-[#f47144]"
+                                className="mt-1 accent-[color:var(--dash-accent)]"
                                 checked={includeAlreadySolved}
                                 onChange={(e) => setIncludeAlreadySolved(e.target.checked)}
                             />
-                            <span className="text-[14px] text-[#e5e1e4]">
+                            <span className="text-[14px] text-[color:var(--dash-content-primary)]">
                                 Count re-solves of problems already solved before
-                                <span className="block text-[12px] text-[#dfc0b6] opacity-70">
+                                <span className="block text-[12px] text-[color:var(--dash-content-secondary)] opacity-70">
                                     Off: only problems solved for the first time count.
                                 </span>
                             </span>
@@ -187,7 +187,7 @@ export default function GoalForm({
                                 </Chip>
                             </div>
                             {isRepeating && (
-                                <p className="text-[12px] text-[#dfc0b6] opacity-70 mt-1">
+                                <p className="text-[12px] text-[color:var(--dash-content-secondary)] opacity-70 mt-1">
                                     Each {recurrence === "weekly" ? "week" : "month"} starts on the start date&apos;s day and progress resets.
                                 </p>
                             )}
@@ -220,7 +220,7 @@ export default function GoalForm({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="py-2 px-4 border border-white/10 text-[#dfc0b6] font-semibold rounded-lg hover:bg-white/5 active:scale-95 transition-all"
+                        className="py-2 px-4 border border-[color:var(--dash-border-subtle)] text-[color:var(--dash-content-secondary)] font-semibold rounded-lg hover:bg-[color:var(--dash-surface-sunken)] active:scale-95 transition-all"
                     >
                         Cancel
                     </button>
@@ -228,7 +228,7 @@ export default function GoalForm({
                         type="button"
                         disabled={saving}
                         onClick={() => void handleSubmit()}
-                        className="py-2 px-4 bg-[#f47144] text-[#5d1800] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
+                        className="py-2 px-4 bg-[color:var(--dash-accent)] text-[color:var(--dash-content-on-accent)] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-60"
                     >
                         {saving ? "Saving…" : goal ? "Save" : "Create goal"}
                     </button>
@@ -289,7 +289,7 @@ function RevisionPicker({
                             key={id}
                             type="button"
                             onClick={() => toggle({ problemId: id, ...p })}
-                            className="inline-flex items-center gap-1 rounded-md bg-[rgba(255,181,157,0.12)] px-2 py-0.5 text-[12px] text-[#ffb59d] hover:brightness-110"
+                            className="inline-flex items-center gap-1 rounded-md bg-[color:var(--dash-accent-wash)] px-2 py-0.5 text-[12px] text-[color:var(--dash-accent-soft)] hover:brightness-110"
                             title="Remove"
                         >
                             {p.title}
@@ -313,18 +313,18 @@ function RevisionPicker({
 
             <div className="mt-2 max-h-[260px] overflow-y-auto space-y-1 pr-1">
                 {loading && candidates.length === 0 ? (
-                    <p className="text-[13px] text-[#dfc0b6] opacity-70 py-2">Loading your solved problems…</p>
+                    <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 py-2">Loading your solved problems…</p>
                 ) : candidates.length === 0 ? (
-                    <p className="text-[13px] text-[#dfc0b6] opacity-70 py-2">No solved problems match.</p>
+                    <p className="text-[13px] text-[color:var(--dash-content-secondary)] opacity-70 py-2">No solved problems match.</p>
                 ) : (
                     candidates.map((c) => {
                         const checked = selected.has(c.problemId);
                         return (
-                            <label key={c.problemId} className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors ${checked ? "bg-[rgba(255,181,157,0.08)]" : "bg-white/5 hover:bg-white/10"}`}>
-                                <input type="checkbox" className="accent-[#f47144]" checked={checked} onChange={() => toggle(c)} />
+                            <label key={c.problemId} className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors ${checked ? "bg-[color:var(--dash-accent-wash)]" : "bg-[color:var(--dash-surface-sunken)] hover:bg-[color:var(--dash-surface-sunken)]"}`}>
+                                <input type="checkbox" className="accent-[color:var(--dash-accent)]" checked={checked} onChange={() => toggle(c)} />
                                 <span className="flex-1 min-w-0">
-                                    <span className="block truncate text-[14px] text-[#e5e1e4]">{c.title}</span>
-                                    <span className="block text-[11px] text-[#dfc0b6] opacity-70">
+                                    <span className="block truncate text-[14px] text-[color:var(--dash-content-primary)]">{c.title}</span>
+                                    <span className="block text-[11px] text-[color:var(--dash-content-secondary)] opacity-70">
                                         {c.platform}
                                         {c.difficulty ? ` · ${c.difficulty}` : ""} · solved {c.lastSolvedDate}
                                     </span>

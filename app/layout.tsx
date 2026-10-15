@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono, IBM_Plex_Mono, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,6 +18,18 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500"],
 });
 
+// Dashboard typography: UI text and numeric data (see .dashboard-shell in globals.css).
+const uiSans = Plus_Jakarta_Sans({
+  variable: "--font-ui",
+  subsets: ["latin"],
+});
+
+const dataMono = IBM_Plex_Mono({
+  variable: "--font-data",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   title: "AlgoMentor",
   description: "AlgoMentor — Track progress, streaks, and competitive programming performance.",
@@ -31,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${uiSans.variable} ${dataMono.variable} h-full antialiased`}
     >
       <head>
         <link

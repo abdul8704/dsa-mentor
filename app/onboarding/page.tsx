@@ -9,7 +9,10 @@ export default async function Page({
     searchParams: Promise<{ edit?: string }>;
 }) {
     const { edit } = await searchParams;
-    const isEditing = edit === "1";
+    // Settings moved into the dashboard; keep old links working.
+    if (edit === "1") {
+        redirect("/dashboard/settings");
+    }
 
     const supabase = await createSupabaseServerClient();
 
@@ -23,7 +26,7 @@ export default async function Page({
 
     await ensureProfile(user.id);
 
-    if (!isEditing && (await isOnboardingCompleted(user.id))) {
+    if (await isOnboardingCompleted(user.id)) {
         redirect("/dashboard");
     }
 
@@ -47,7 +50,6 @@ export default async function Page({
                 description: profile?.description ?? "",
                 avatarUrl: profile?.avatar_url ?? "",
             }}
-            isEditing={isEditing}
         />
     );
 }

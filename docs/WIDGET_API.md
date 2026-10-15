@@ -25,7 +25,7 @@ Only SHA-256 hashes of device codes and tokens are stored (`widget_link_codes`, 
 }, "meta": { "servedAt": "…" } }
 ```
 
-`totals`/`platforms` are the same values as the dashboard's difficulty and platform cards. "Today" and `last7Days` are computed in the `tz` the widget sends (UTC if missing or invalid), counting distinct problems.
+`totals`/`platforms` are the same values as the dashboard's difficulty and platform cards. "Today" and `last7Days` are computed in the `tz` the widget sends (UTC if missing or invalid), counting distinct problems. Each `last7Days` entry's `platforms` lists only platforms with at least one solve that day, highest first.
 
 ## Setup
 

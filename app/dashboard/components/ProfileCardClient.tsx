@@ -9,7 +9,9 @@ import PlatformBreakdown from "./PlatformBreakdown";
 interface ProfileCardProps {
   profile?: UserProfile | null;
   streak?: StreakData | null;
-  userId: string;
+  userId?: string;
+  /** Public page: no refresh button, and no placeholder stats when streak is hidden. */
+  readOnly?: boolean;
 }
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -25,16 +27,16 @@ const DEFAULT_STREAK: Pick<StreakData, "currentStreak" | "solvedToday" | "solved
   solvedTodayByPlatform: { leetcode: 9, codeforces: 3, atcoder: 0, cses: 2 },
 };
 
-export default function ProfileCardClient({ profile, streak, userId }: ProfileCardProps) {
+export default function ProfileCardClient({ profile, streak, userId, readOnly = false }: ProfileCardProps) {
   const p = profile ?? DEFAULT_PROFILE;
-  const s = streak ?? DEFAULT_STREAK;
+  const s = readOnly ? streak : streak ?? DEFAULT_STREAK;
   const router = useRouter();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 
   async function handleRefreshAll() {
-    if (isRefreshing) {
+    if (isRefreshing || !userId) {
       return;
     }
 
@@ -87,6 +89,7 @@ export default function ProfileCardClient({ profile, streak, userId }: ProfileCa
         <p className="text-[#dfc0b6] text-[16px] opacity-80 mt-1">
           {p.title}
         </p>
+        {s && (
         <div className="flex flex-wrap justify-center gap-4 mt-4">
           <div className="bg-white/5 rounded-lg px-4 py-3 flex flex-col">
             <span className="text-[12px] tracking-[0.05em] font-medium uppercase text-[#dfc0b6]" style={{ fontFamily: "var(--font-geist-mono)" }}>
@@ -106,7 +109,9 @@ export default function ProfileCardClient({ profile, streak, userId }: ProfileCa
             <PlatformBreakdown counts={s.solvedTodayByPlatform} className="mt-1" />
           </div>
         </div>
+        )}
 
+        {!readOnly && (
         <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-2">
           <button
             type="button"
@@ -123,6 +128,7 @@ export default function ProfileCardClient({ profile, streak, userId }: ProfileCa
             <span className="text-[12px] text-[#dfc0b6] opacity-80">{refreshMessage}</span>
           )}
         </div>
+        )}
       </div>
     </div>
   );

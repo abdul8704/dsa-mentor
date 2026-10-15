@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { label: "Dashboard", icon: "dashboard", href: "/dashboard" },
   { label: "Mentees", icon: "group", href: "/dashboard/mentees" },
   { label: "Tasks", icon: "assignment", href: "/dashboard/tasks" },
+  { label: "Goals", icon: "flag", href: "/dashboard/goals" },
 ];
 
 const FOOTER_ITEMS = [

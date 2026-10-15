@@ -77,8 +77,8 @@ export default function PublicApiSettings() {
       setMessage({
         tone: "success",
         text: result.settings.enabled
-          ? "Saved. Your public API is live; CDN copies can take up to 5 minutes to update."
-          : "Saved. Your public API is off; CDN copies can take up to 5 minutes to expire.",
+          ? "Saved. Your public page and API are live; cached copies can take up to 5 minutes to update."
+          : "Saved. Your public page and API are off; cached copies can take up to 5 minutes to expire.",
       });
     } catch {
       setMessage({ tone: "error", text: "Couldn't save your settings. Please try again." });
@@ -88,6 +88,7 @@ export default function PublicApiSettings() {
   }
 
   const apiBase = savedHandle ? `${origin}/api/public/v1/users/${savedHandle}` : null;
+  const pageUrl = savedHandle ? `${origin}/users/${savedHandle}` : null;
 
   return (
     <div className="glass-card rounded-xl p-6 lg:p-8 flex flex-col gap-4">
@@ -99,9 +100,9 @@ export default function PublicApiSettings() {
       </div>
 
       <p className="text-[13px] text-[#a78b82] leading-relaxed">
-        Turn this on to let your portfolio (or anyone) read the dashboard widgets you choose below through a
-        read-only API. Only those widgets are shared, under your public handle. Your email, account id and
-        connected-platform credentials are never exposed. Turn it off at any time.
+        Turn this on to share the dashboard widgets you choose below with anyone: as a public page at
+        /users/&lt;your handle&gt; and through a read-only API for your portfolio. Only those widgets are shared.
+        Your email, account id and connected-platform credentials are never exposed. Turn it off at any time.
       </p>
 
       {loading ? (
@@ -165,6 +166,25 @@ export default function PublicApiSettings() {
 
       {message && (
         <p className={`text-[12px] ${message.tone === "success" ? "text-[#4edea3]" : "text-[#ff8a8a]"}`}>{message.text}</p>
+      )}
+
+      {pageUrl && savedEnabled && (
+        <div className="flex flex-col gap-1 text-[12px] text-[#dfc0b6]">
+          <span className="text-[11px] uppercase tracking-[0.05em] text-[#a78b82]">Your public page</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <a href={pageUrl} target="_blank" rel="noopener noreferrer" className="break-all text-[#ffb59d] hover:underline">
+              {pageUrl}
+            </a>
+            <button
+              type="button"
+              onClick={() => void navigator.clipboard?.writeText(pageUrl).then(() => setMessage({ tone: "success", text: "Link copied." }))}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-white/10 text-[12px] text-[#dfc0b6] hover:bg-white/5"
+            >
+              <span className="material-symbols-outlined text-[14px]">content_copy</span>
+              Copy
+            </button>
+          </div>
+        </div>
       )}
 
       {apiBase && savedEnabled && (

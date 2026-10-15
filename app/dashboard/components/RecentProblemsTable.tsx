@@ -10,6 +10,8 @@ interface RecentProblemsTableProps {
   data?: RecentProblem[] | null;
   /** "compact" = dashboard card capped to a few rows with a "view all" link. "full" = uncapped, standalone page. */
   variant?: "compact" | "full";
+  /** Compact variant's "view all" link target; null hides it (e.g. on the public page). */
+  viewAllHref?: string | null;
   /** Filter form content (full variant only) — toggled open/closed via the header's filter icon. */
   filterPanel?: ReactNode;
 }
@@ -175,7 +177,12 @@ function TagPills({ tags }: { tags: string[] }) {
   );
 }
 
-export default function RecentProblemsTable({ data, variant = "compact", filterPanel }: RecentProblemsTableProps) {
+export default function RecentProblemsTable({
+  data,
+  variant = "compact",
+  viewAllHref = "/dashboard/problems",
+  filterPanel,
+}: RecentProblemsTableProps) {
   const problems = data ?? [];
   const isCompact = variant === "compact";
   const maxHeight = VISIBLE_ROWS * ROW_HEIGHT_PX;
@@ -200,8 +207,9 @@ export default function RecentProblemsTable({ data, variant = "compact", filterP
               >
                 {problems.length} problem{problems.length === 1 ? "" : "s"}
               </span>
+              {viewAllHref && (
               <Link
-                href="/dashboard/problems"
+                href={viewAllHref}
                 aria-label="View all solved problems"
                 title="View all solved problems"
                 className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[rgba(255,181,157,0.3)] text-[#ffb59d] hover:bg-[rgba(255,181,157,0.08)] active:scale-95 transition-all"
@@ -210,6 +218,7 @@ export default function RecentProblemsTable({ data, variant = "compact", filterP
                   open_in_full
                 </span>
               </Link>
+              )}
             </>
           ) : (
             filterPanel && (
